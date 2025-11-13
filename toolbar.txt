@@ -1,4 +1,14 @@
-Home=index.html
-About=about.html
-Contact=contact.html
-Merda=tools.html
+{
+  "en": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "tools": "Tools"
+  },
+  "pt": {
+    "home": "Início",
+    "about": "Sobre",
+    "contact": "Contacto",
+    "tools": "Ferramentas"
+  }
+}
