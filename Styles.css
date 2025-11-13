@@ -1,7 +1,7 @@
 .toolbar {
   background-color: #8B0000; /* Dark red */
   overflow: hidden;
-  font-family: Arial, sans-serif;
+  font-family: Verdana, sans-serif;
 }
 .toolbar a {
   float: left;
