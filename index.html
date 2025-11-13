@@ -7,20 +7,7 @@
 
   <div id="toolbar"></div>
 
-  <script>
-    fetch('toolbar.html')
-      .then(response => {
-        if (!response.ok) throw new Error('Failed to load toolbar.html');
-        return response.text();
-      })
-      .then(html => {
-        document.getElementById('toolbar').innerHTML = html;
-      })
-      .catch(error => {
-        document.getElementById('toolbar').textContent = 'Toolbar failed to load.';
-        console.error(error);
-      });
-  </script>
+  <iframe src="toolbar.html" style="width:100%; height:60px; border:none;"></iframe>
 
 </body>
 </html>
