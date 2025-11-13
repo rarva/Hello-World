@@ -6,25 +6,30 @@
   <div class="toolbar" id="toolbar-links">Loading toolbar...</div>
 
   <script>
-    fetch('toolbar.txt')
-      .then(response => response.text())
-      .then(text => {
-        const lines = text.replace(/\r/g, '').trim().split('\n');
-        const container = document.getElementById('toolbar-links');
-        container.innerHTML = '';
-        lines.forEach(line => {
-          const [label, url] = line.split('=');
-          if (label && url) {
-            const a = document.createElement('a');
-            a.href = url.trim();
-            a.textContent = label.trim();
-            container.appendChild(a);
-          }
-        });
-      })
-      .catch(error => {
-        document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
-        console.error('Toolbar load error:', error);
+    const language = 'pt'; // Change to 'en', 'pt', etc.
+
+    Promise.all([
+      fetch('strings.json').then(res => res.json()),
+      fetch('toolbar.txt').then(res => res.text())
+    ])
+    .then(([strings, toolbarText]) => {
+      const labels = strings[language];
+      const lines = toolbarText.replace(/\r/g, '').trim().split('\n');
+      const container = document.getElementById('toolbar-links');
+      container.innerHTML = '';
+      lines.forEach(line => {
+        const [key, url] = line.split('=');
+        if (key && url && labels[key.trim()]) {
+          const a = document.createElement('a');
+          a.href = url.trim();
+          a.textContent = labels[key.trim()];
+          container.appendChild(a);
+        }
       });
+    })
+    .catch(error => {
+      document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
+      console.error(error);
+    });
   </script>
 </body>
