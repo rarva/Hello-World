@@ -21,7 +21,10 @@
 
 <script>
   fetch('toolbar.txt')
-    .then(response => response.text())
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to load toolbar.txt');
+      return response.text();
+    })
     .then(text => {
       const lines = text.replace(/\r/g, '').trim().split('\n');
       const container = document.getElementById('toolbar-links');
@@ -37,7 +40,7 @@
       });
     })
     .catch(error => {
-      document.getElementById('toolbar-links').textContent = 'Failed to load toolbar.';
-      console.error('Toolbar load error:', error);
+      document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
+      console.error(error);
     });
 </script>
