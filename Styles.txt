@@ -12,5 +12,5 @@
   text-decoration: none;
 }
 .toolbar a:hover {
-  background-color: #a52a2a; /* Slightly lighter red on hover */
+  background-color: #a52a2a; /* Slightly lighter red */
 }
