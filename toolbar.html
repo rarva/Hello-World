@@ -23,7 +23,7 @@
   fetch('toolbar.txt')
     .then(response => response.text())
     .then(text => {
-      const lines = text.trim().split('\n');
+      const lines = text.replace(/\r/g, '').trim().split('\n');
       const container = document.getElementById('toolbar-links');
       lines.forEach(line => {
         const [label, url] = line.split('=');
