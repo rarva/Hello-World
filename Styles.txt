@@ -12,5 +12,5 @@
   text-decoration: none;
 }
 .toolbar a:hover {
-  background-color: #575757;
+  background-color: #570057;
 }
