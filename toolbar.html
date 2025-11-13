@@ -1,38 +1,30 @@
-<link rel="stylesheet" href="styles.css">
-<div class="toolbar" id="toolbar-links">Loading toolbar...</div>
+<head>
+  <link rel="stylesheet" href="styles.css">
+</head>
 
-<script>
-// Load styles from styles.css
-fetch('styles.css')
-  .then(response => response.text())
-  .then(css => {
-    const style = document.createElement('style');
-    style.textContent = css;
-    document.head.appendChild(style);
-  })
-  .catch(error => {
-    console.error('Failed to load styles:', error);
-  });
+<body>
+  <div class="toolbar" id="toolbar-links">Loading toolbar...</div>
 
-// Load toolbar links from toolbar.txt
-fetch('toolbar.txt')
-  .then(response => response.text())
-  .then(text => {
-    const lines = text.replace(/\r/g, '').trim().split('\n');
-    const container = document.getElementById('toolbar-links');
-    container.innerHTML = '';
-    lines.forEach(line => {
-      const [label, url] = line.split('=');
-      if (label && url) {
-        const a = document.createElement('a');
-        a.href = url.trim();
-        a.textContent = label.trim();
-        container.appendChild(a);
-      }
-    });
-  })
-  .catch(error => {
-    document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
-    console.error('Toolbar load error:', error);
-  });
-</script>
+  <script>
+    fetch('toolbar.txt')
+      .then(response => response.text())
+      .then(text => {
+        const lines = text.replace(/\r/g, '').trim().split('\n');
+        const container = document.getElementById('toolbar-links');
+        container.innerHTML = '';
+        lines.forEach(line => {
+          const [label, url] = line.split('=');
+          if (label && url) {
+            const a = document.createElement('a');
+            a.href = url.trim();
+            a.textContent = label.trim();
+            container.appendChild(a);
+          }
+        });
+      })
+      .catch(error => {
+        document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
+        console.error('Toolbar load error:', error);
+      });
+  </script>
+</body>
