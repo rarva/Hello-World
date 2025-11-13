@@ -17,15 +17,15 @@
   }
 </style>
 
-<div class="toolbar" id="toolbar-links"></div>
+<div class="toolbar" id="toolbar-links">Loading toolbar...</div>
 
 <script>
-<div id="toolbar-links">Loading toolbar...</div>
   fetch('toolbar.txt')
     .then(response => response.text())
     .then(text => {
       const lines = text.replace(/\r/g, '').trim().split('\n');
       const container = document.getElementById('toolbar-links');
+      container.innerHTML = ''; // Clear "Loading toolbar..."
       lines.forEach(line => {
         const [label, url] = line.split('=');
         if (label && url) {
@@ -35,5 +35,9 @@
           container.appendChild(a);
         }
       });
+    })
+    .catch(error => {
+      document.getElementById('toolbar-links').textContent = 'Failed to load toolbar.';
+      console.error('Toolbar load error:', error);
     });
 </script>
