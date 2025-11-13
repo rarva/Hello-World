@@ -25,7 +25,7 @@
     .then(text => {
       const lines = text.replace(/\r/g, '').trim().split('\n');
       const container = document.getElementById('toolbar-links');
-      container.innerHTML = ''; // Clear "Loading toolbar..."
+      container.innerHTML = '';
       lines.forEach(line => {
         const [label, url] = line.split('=');
         if (label && url) {
