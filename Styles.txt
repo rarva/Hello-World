@@ -1,16 +1,16 @@
 .toolbar {
-  background-color: #833;
+  background-color: #8B0000; /* Dark red */
   overflow: hidden;
   font-family: Arial, sans-serif;
 }
 .toolbar a {
   float: left;
   display: block;
-  color: yellow;
+  color: white;
   text-align: center;
   padding: 14px 20px;
   text-decoration: none;
 }
 .toolbar a:hover {
-  background-color: #570057;
+  background-color: #a52a2a; /* Slightly lighter red on hover */
 }
