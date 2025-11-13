@@ -3,20 +3,30 @@
     "toolbar": {
       "home": "Home",
       "about": "About",
-      "contact": "Contact"
+      "contact": "Contact",
+      "tools": "Tools"
     },
     "footer": {
       "copyright": "All rights reserved"
+    },
+    "app": {
+      "welcome": "Welcome to the app",
+      "loading": "Loading..."
     }
   },
   "pt": {
     "toolbar": {
       "home": "Início",
       "about": "Sobre",
-      "contact": "Contacto"
+      "contact": "Contacto",
+      "tools": "Ferramentas"
     },
     "footer": {
       "copyright": "Todos os direitos reservados"
+    },
+    "app": {
+      "welcome": "Bem-vindo à aplicação",
+      "loading": "A carregar..."
     }
   }
 }
