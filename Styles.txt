@@ -1,5 +1,5 @@
 .toolbar {
-  background-color: #333;
+  background-color: #833;
   overflow: hidden;
   font-family: Arial, sans-serif;
 }
