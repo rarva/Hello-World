@@ -1,10 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Hello Web</title>
+  <title>Home</title>
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <p>This is my first GitHub-hosted webpage.</p>
+
+  <div id="toolbar"></div>
+
+  <script>
+    fetch('toolbar.html')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('toolbar').innerHTML = html;
+      });
+  </script>
+
 </body>
 </html>
