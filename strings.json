@@ -1,0 +1,22 @@
+{
+  "en": {
+    "toolbar": {
+      "home": "Home",
+      "about": "About",
+      "contact": "Contact"
+    },
+    "footer": {
+      "copyright": "All rights reserved"
+    }
+  },
+  "pt": {
+    "toolbar": {
+      "home": "Início",
+      "about": "Sobre",
+      "contact": "Contacto"
+    },
+    "footer": {
+      "copyright": "Todos os direitos reservados"
+    }
+  }
+}
