@@ -6,8 +6,11 @@ fetch('styles.txt')
   .then(response => response.text())
   .then(css => {
     const style = document.createElement('style');
-    style.textContent = css;
+    style.innerHTML = css;
     document.head.appendChild(style);
+  })
+  .catch(error => {
+    console.error('Failed to load styles:', error);
   });
 
 // Load toolbar links from toolbar.txt
@@ -29,6 +32,6 @@ fetch('toolbar.txt')
   })
   .catch(error => {
     document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
-    console.error(error);
+    console.error('Toolbar load error:', error);
   });
 </script>
