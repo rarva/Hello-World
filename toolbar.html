@@ -8,28 +8,22 @@
   <script>
     const language = 'pt'; // Change to 'en', 'pt', etc.
 
-    Promise.all([
-      fetch('strings.json').then(res => res.json()),
-      fetch('toolbar.txt').then(res => res.text())
-    ])
-    .then(([strings, toolbarText]) => {
-      const labels = strings[language];
-      const lines = toolbarText.replace(/\r/g, '').trim().split('\n');
-      const container = document.getElementById('toolbar-links');
-      container.innerHTML = '';
-      lines.forEach(line => {
-        const [key, url] = line.split('=');
-        if (key && url && labels[key.trim()]) {
+    fetch('strings.json')
+      .then(response => response.json())
+      .then(strings => {
+        const labels = strings[language]?.toolbar;
+        const container = document.getElementById('toolbar-links');
+        container.innerHTML = '';
+        for (const key in labels) {
           const a = document.createElement('a');
-          a.href = url.trim();
-          a.textContent = labels[key.trim()];
+          a.href = key + '.html'; // You can customize this logic
+          a.textContent = labels[key];
           container.appendChild(a);
         }
+      })
+      .catch(error => {
+        document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
+        console.error('Toolbar load error:', error);
       });
-    })
-    .catch(error => {
-      document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
-      console.error(error);
-    });
   </script>
 </body>
