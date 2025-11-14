@@ -1,0 +1,2 @@
+# Ignore local runtime config with secrets
+config.js

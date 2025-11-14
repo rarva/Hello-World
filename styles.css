@@ -1,77 +1,310 @@
+/* ===== COLOR PALETTE ===== */
+:root {
+  --color-primary: #DA162A;        /* Dark Red */
+  --color-primary-hover: #EB8318;  /* Lighter Red */
+  --color-text-light: white;
+  --color-bg-light: white;
+  --color-bg-transparent: transparent;
+  --toolbar-height: 100px ; /* change this to resize toolbar; buttons will stay half height */
+}
 
-
-
-  .toolbar {
-    display: flex;
-    align-items: center;
-    background-color: transparent; /* Let us control background zones manually */
-    font-family: Verdana, sans-serif;
-    height: 60px;
-    width: 100vw;
-
-  }
-  
-
- 
-  
-  #toolbar-links a {
-    color: white;
-    text-align: center;
-    padding: 14px 20px;
-    text-decoration: none;
-  }
-  
-  #toolbar-links a:hover {
-    background-color: #a52a2a;
-  }
-  
-  #toolbar-links {
-    display: flex;
-    gap: 10px;
-    padding-left: 20px;
-    background-color: #8B0000; /* Red only behind the links */
-    flex-grow: 1;
-    height: 60px;
-  }
-  
-  .toolbar-train {
-    background-color: white; /* or black, or whatever the train silhouette expects */
-   
-  }
-  
-  
-
-  
- 
-  
-  .toolbar-train img {
-    height: 60px;
-  }
+.toolbar {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-bg-transparent); /* Let us control background zones manually */
+  font-family: Verdana, sans-serif;
+  height: var(--toolbar-height);
+  width: 100vw;
 }
 
 #toolbar-links {
   display: flex;
   gap: 10px;
   padding-left: 20px;
+  padding-top: 40px;
+  background-color: var(--color-primary); /* Red only behind the links */
+  flex-grow: 1;
+  height: var(--toolbar-height);
 }
 
 #toolbar-links a {
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--toolbar-height) / 3);
+  min-width: 110px;
+  margin: 0 8px; /* vertical centering handled by parent */
+  padding: 0 18px;
+  background-color: var(--color-text-light); /* white button */
+  color: var(--color-primary); /* text uses primary color */
   text-align: center;
-  padding: 14px 20px;
   text-decoration: none;
+  border-radius: 8px;
+  box-sizing: border-box;
+  box-shadow: none;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
 }
 
 #toolbar-links a:hover {
-  background-color: #a52a2a;
+  background-color: var(--color-primary-hover);
+  color: var(--color-text-light);
+  transform: translateY(-2px);
 }
 
 .toolbar-train {
   display: flex;
   align-items: center;
   padding-right: 20px;
+  background-color: var(--color-bg-transparent); /* Train silhouette background */
 }
 
 .toolbar-train img {
-  height: 60px;
+  height: --toolbar-height;
+}
+
+/* Inline SVG train: color using the primary palette variable */
+.toolbar-train svg,
+.toolbar-train .inline-train-svg {
+  /* match the toolbar height so the train scales with the toolbar */
+  height: var(--toolbar-height);
+  width: auto;
+  /* ensure both fill and currentColor-based fills are covered */
+  color: var(--color-primary);
+  fill: var(--color-primary);
+  stroke: none;
+}
+
+/* iframe in the home view that hosts the toolbar should match the toolbar height */
+.toolbar-frame {
+  width: 100%;
+  height: var(--toolbar-height);
+  border: none;
+  display: block;
+}
+
+/* ===== Login styles ===== */
+body {
+  position: relative; /* establish positioning context for body */
+}
+
+#app {
+  overflow: visible; /* allow fixed elements like login to render */
+}
+
+.login-page {
+  /* force center on viewport - use absolute positioning on the viewport scale */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f4f6f8 0%, #ffffff 100%);
+  padding: 40px 20px;
+  z-index: 10000;
+  box-sizing: border-box;
+}
+
+.login-card {
+  width: 380px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(16,24,40,0.08);
+  padding: 28px 28px;
+  box-sizing: border-box;
+}
+
+.login-brand h1 {
+  margin: 0 0 6px 0;
+  font-size: 22px;
+  color: var(--color-primary);
+}
+.login-brand .muted {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.login-form {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-form label {
+  font-size: 12px;
+  color: #444;
+  margin: 0;
+}
+
+.login-form input[type="email"],
+.login-form input[type="password"] {
+  height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e6e9ee;
+  font-size: 14px;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-wrapper input[type="password"],
+.password-wrapper input[type="text"] {
+  height: 44px;
+  padding: 8px 12px 8px 12px;
+  padding-right: 44px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e6e9ee;
+  font-size: 14px;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  opacity: 0.6;
+  transition: opacity 200ms ease;
+}
+
+.eye-btn:hover {
+  opacity: 1;
+}
+
+.eye-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+  stroke: var(--color-primary);
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 10px;
+  border-radius: 6px;
+  margin: 0;
+  font-size: 13px;
+  border-left: 4px solid #c33;
+}
+
+.field-error {
+  color: #c33;
+  font-size: 12px;
+  margin: -12px 0 0 0;
+  padding: 4px 8px;
+}
+
+.login-form input.error {
+  border-color: #c33;
+  background-color: #fef5f5;
+}
+
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  font-size: 13px;
+}
+
+.login-actions {
+  margin: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.login-actions button {
+  background: var(--color-primary);
+  color: var(--color-text-light);
+  border: none;
+  padding: 0;
+  height: 44px;
+  width: 100%;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.login-actions button:hover {
+  background: var(--color-primary-hover);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: none;
+  padding: 0;
+  font-weight: bold;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.login-footer {
+  margin-top: 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.login-footer p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+.login-footer a {
+  color: #666;
+  text-decoration: none;
+  font-size: 13px;
+}
+.login-footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 420px) {
+  .login-card { width: 100%; padding: 20px; }
 }
