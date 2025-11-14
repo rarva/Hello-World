@@ -1,16 +1,77 @@
-.toolbar {
-  background-color: #8B0000; /* Dark red */
-  overflow: hidden;
-  font-family: Verdana, sans-serif;
+
+
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    background-color: transparent; /* Let us control background zones manually */
+    font-family: Verdana, sans-serif;
+    height: 60px;
+    width: 100vw;
+
+  }
+  
+
+ 
+  
+  #toolbar-links a {
+    color: white;
+    text-align: center;
+    padding: 14px 20px;
+    text-decoration: none;
+  }
+  
+  #toolbar-links a:hover {
+    background-color: #a52a2a;
+  }
+  
+  #toolbar-links {
+    display: flex;
+    gap: 10px;
+    padding-left: 20px;
+    background-color: #8B0000; /* Red only behind the links */
+    flex-grow: 1;
+    height: 60px;
+  }
+  
+  .toolbar-train {
+    background-color: white; /* or black, or whatever the train silhouette expects */
+   
+  }
+  
+  
+
+  
+ 
+  
+  .toolbar-train img {
+    height: 60px;
+  }
 }
-.toolbar a {
-  float: left;
-  display: block;
+
+#toolbar-links {
+  display: flex;
+  gap: 10px;
+  padding-left: 20px;
+}
+
+#toolbar-links a {
   color: white;
   text-align: center;
   padding: 14px 20px;
   text-decoration: none;
 }
-.toolbar a:hover {
-  background-color: #a52a2a; /* Slightly lighter red */
+
+#toolbar-links a:hover {
+  background-color: #a52a2a;
+}
+
+.toolbar-train {
+  display: flex;
+  align-items: center;
+  padding-right: 20px;
+}
+
+.toolbar-train img {
+  height: 60px;
 }

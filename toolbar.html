@@ -1,12 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt">
 <head>
+  <meta charset="UTF-8">
+  <title>Toolbar</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100vw;
+      height: 60px;
+    }
+  </style>
 </head>
-
 <body>
-  <div class="toolbar" id="toolbar-links">Loading toolbar...</div>
+  <div class="toolbar">
+    <div id="toolbar-links">Loading toolbar...</div>
+    <div class="toolbar-train"></div>
+  </div>
 
   <script>
-    const language = 'en'; // Change to 'en', 'pt', etc.
+    const language = 'pt';
 
     fetch('strings.json')
       .then(response => response.json())
@@ -14,12 +29,20 @@
         const labels = strings[language]?.toolbar;
         const container = document.getElementById('toolbar-links');
         container.innerHTML = '';
+
         for (const key in labels) {
           const a = document.createElement('a');
-          a.href = key + '.html'; // You can customize this logic
+          a.href = key + '.html';
           a.textContent = labels[key];
           container.appendChild(a);
         }
+
+        const trainContainer = document.querySelector('.toolbar-train');
+        const img = document.createElement('img');
+        img.src = 'assets/images/train.svg';
+        img.alt = 'Train graphic';
+        img.style.height = '60px';
+        trainContainer.appendChild(img);
       })
       .catch(error => {
         document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
@@ -27,3 +50,4 @@
       });
   </script>
 </body>
+</html>
