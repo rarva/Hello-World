@@ -18,6 +18,67 @@ function checkRememberedUser() {
   }
 }
 
+// Small UI indicator helper: sets the status pill in the login card
+function setSupabaseIndicator(online) {
+  const el = document.getElementById('supabase-indicator');
+  if (!el) return;
+  if (online) {
+    el.textContent = 'Supabase: Connected';
+    el.classList.remove('offline');
+    el.classList.add('online');
+  } else {
+    el.textContent = 'Supabase: Offline';
+    el.classList.remove('online');
+    el.classList.add('offline');
+  }
+}
+
+// Initialize Supabase client loader: this will load `supabase_client.js`
+// which attaches a client to `window.supabase` if `config.js` (or runtime keys)
+// are present. We keep this optional so localStorage fallback still works.
+function initSupabase() {
+  try {
+    // If no runtime keys, show offline and skip loading client
+    if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+      setSupabaseIndicator(false);
+      return;
+    }
+
+    // show offline initially while we wait for the client to load
+    setSupabaseIndicator(false);
+
+    if (window.supabase) {
+      setSupabaseIndicator(true);
+      return;
+    }
+
+    if (document.querySelector('script[data-supabase-client]')) return;
+
+    const s = document.createElement('script');
+    s.src = 'supabase_client.js';
+    s.defer = true;
+    s.setAttribute('data-supabase-client', '1');
+    document.head.appendChild(s);
+
+    // Poll for the client to appear (short-lived)
+    let attempts = 0;
+    const maxAttempts = 12;
+    const iv = setInterval(() => {
+      attempts += 1;
+      if (window.supabase) {
+        setSupabaseIndicator(true);
+        clearInterval(iv);
+      } else if (attempts >= maxAttempts) {
+        setSupabaseIndicator(false);
+        clearInterval(iv);
+      }
+    }, 250);
+  } catch (err) {
+    console.warn('Supabase init failed:', err);
+    setSupabaseIndicator(false);
+  }
+}
+
 function loadView(viewName) {
   if (viewName === 'login') {
     // Load login directly into body, not #app, so it bypasses #app constraints
@@ -99,6 +160,9 @@ function initLogin() {
 
   // Restore remembered user
   checkRememberedUser();
+
+  // Initialize Supabase indicator/client when the login view loads
+  initSupabase();
 }
 
 function togglePasswordVisibility(fieldId) {
@@ -126,64 +190,6 @@ function toggleSignupMode() {
     toggleBtn.textContent = 'Sign Up';
   }
   clearAllErrors();
-}
-
-function handleLogin() {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const rememberMe = document.getElementById('remember-me').checked;
-
-  clearAllErrors();
-
-  if (!email || !password) {
-    if (!email) showFieldError('email', 'Email is required');
-    if (!password) showFieldError('password', 'Password is required');
-    return;
-  }
-
-  // Validate email format
-  if (!isValidEmail(email)) {
-    showFieldError('email', 'Please enter a valid email address');
-    return;
-  }
-
-  if (app.isSignupMode) {
-    // Handle signup
-    const passwordConfirm = document.getElementById('password-confirm').value;
-    
-    if (password !== passwordConfirm) {
-      showFieldError('confirm', 'Passwords do not match');
-      return;
-    }
-
-    if (app.users[email]) {
-      showFieldError('email', 'Email already registered');
-      return;
-    }
-
-    // Register new user
-    app.users[email] = `${email}:${password}`;
-    localStorage.setItem('users', JSON.stringify(app.users));
-    showGeneralMessage('Account created! Please sign in.', 'success');
-    
-    // Switch back to login mode
-    setTimeout(() => {
-      app.isSignupMode = true;
-      toggleSignupMode();
-    }, 1500);
-  } else {
-    // Handle login
-    if (app.users[email] === `${email}:${password}`) {
-      if (rememberMe) {
-        localStorage.setItem('rememberedUser', `${email}:${password}`);
-      } else {
-        localStorage.removeItem('rememberedUser');
-      }
-      loadView('home');
-    } else {
-      showGeneralMessage('Invalid email or password');
-    }
-  }
 }
 
 function isValidEmail(email) {
@@ -238,5 +244,117 @@ function initHome() {
   console.log('Home view initialized');
 }
 
-// Start with login view
-loadView('login');
+async function handleLogin(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const rememberMe = document.getElementById('remember-me').checked;
+
+  clearAllErrors();
+
+  if (!email || !password) {
+    if (!email) showFieldError('email', 'Email is required');
+    if (!password) showFieldError('password', 'Password is required');
+    return;
+  }
+
+  // Validate email format
+  if (!isValidEmail(email)) {
+    showFieldError('email', 'Please enter a valid email address');
+    return;
+  }
+
+  const supabaseAvailable = !!(window.supabase && window.SUPABASE_URL);
+
+  if (app.isSignupMode) {
+    // Handle signup
+    const passwordConfirm = document.getElementById('password-confirm').value;
+
+    if (password !== passwordConfirm) {
+      showFieldError('confirm', 'Passwords do not match');
+      return;
+    }
+
+    if (supabaseAvailable) {
+      try {
+        const { data: signUpData, error: signUpError } = await window.supabase.auth.signUp({ email, password });
+        if (signUpError) {
+          showGeneralMessage(signUpError.message);
+          return;
+        }
+
+        // Create minimal profile row
+        const { data: profileData, error: profileError } = await window.supabase
+          .from('profiles')
+          .insert([{ email, full_name: '' }])
+          .select()
+          .single();
+
+        if (profileError) {
+          showGeneralMessage(profileError.message);
+          return;
+        }
+
+        showGeneralMessage('Account created! Please sign in.', 'success');
+        setTimeout(() => {
+          app.isSignupMode = true;
+          toggleSignupMode();
+        }, 1200);
+        return;
+      } catch (err) {
+        showGeneralMessage(err.message || 'Signup failed');
+        return;
+      }
+    }
+
+    // Fallback: localStorage signup
+    if (app.users[email]) {
+      showFieldError('email', 'Email already registered');
+      return;
+    }
+
+    app.users[email] = `${email}:${password}`;
+    localStorage.setItem('users', JSON.stringify(app.users));
+    showGeneralMessage('Account created! Please sign in.', 'success');
+    setTimeout(() => {
+      app.isSignupMode = true;
+      toggleSignupMode();
+    }, 1500);
+  } else {
+    // Handle login
+    if (supabaseAvailable) {
+      try {
+        const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          showGeneralMessage(error.message || 'Invalid email or password');
+          return;
+        }
+
+        // Optionally persist remembered user for UI convenience
+        if (rememberMe) {
+          localStorage.setItem('rememberedUser', `${email}:${password}`);
+        } else {
+          localStorage.removeItem('rememberedUser');
+        }
+
+        loadView('home');
+        return;
+      } catch (err) {
+        showGeneralMessage(err.message || 'Login failed');
+        return;
+      }
+    }
+
+    // Fallback: localStorage login
+    if (app.users[email] === `${email}:${password}`) {
+      if (rememberMe) {
+        localStorage.setItem('rememberedUser', `${email}:${password}`);
+      } else {
+        localStorage.removeItem('rememberedUser');
+      }
+      loadView('home');
+    } else {
+      showGeneralMessage('Invalid email or password');
+    }
+  }
+}
