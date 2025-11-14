@@ -10,7 +10,7 @@
       padding: 0;
       overflow: hidden;
       width: 100vw;
-      height: 60px;
+      height: var(--toolbar-height);
     }
   </style>
 </head>
@@ -38,11 +38,20 @@
         }
 
         const trainContainer = document.querySelector('.toolbar-train');
-        const img = document.createElement('img');
-        img.src = 'assets/images/train.svg';
-        img.alt = 'Train graphic';
-        img.style.height = '60px';
-        trainContainer.appendChild(img);
+        // Fetch the SVG and inline it so we can style its fill via CSS variables
+        fetch('Assets/Images/Train.svg')
+          .then(r => r.text())
+          .then(svgText => {
+            // remove explicit width/height to allow CSS sizing
+            svgText = svgText.replace(/(width|height)="[^"]*"/g, '');
+            trainContainer.innerHTML = svgText;
+            const svgEl = trainContainer.querySelector('svg');
+            if (svgEl) {
+              // sizing handled by CSS using --toolbar-height
+              svgEl.classList.add('inline-train-svg');
+            }
+          })
+          .catch(err => console.error('Failed to load train svg:', err));
       })
       .catch(error => {
         document.getElementById('toolbar-links').textContent = 'Toolbar failed to load.';
