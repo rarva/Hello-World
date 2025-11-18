@@ -1,11 +1,38 @@
+/* ===== BASE STYLES ===== */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  font-family: Verdana, sans-serif;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+}
+
 /* ===== COLOR PALETTE ===== */
 :root {
   --color-primary: #DA162A;        /* Dark Red */
-  --color-primary-hover: #EB8318;  /* Lighter Red */
+  --color-secondary: #EB8318;      /* Secondary Orange */
+  --color-black: #010101;          /* Black */
   --color-text-light: white;
-  --color-bg-light: white;
+  --color-text-dark: #333;         /* Dark text */
   --color-bg-transparent: transparent;
+  --color-bg: #f5f5f5;             /* Background color */
+  --color-border-light: #e0e0e0;   /* Light border */
+  --color-border-dark: #333;    /* Dark border */
+  --color-success: #0a8a4a;        /* Success green */
+  --color-error: #d9443f;          /* Error red */
   --toolbar-height: 100px ; /* change this to resize toolbar; buttons will stay half height */
+  --radius: 10px;                   /* Global border radius */
+  --border-width: 1.5px;              /* Global border thickness */
+  --font-size-regular: 12px;       /* Global regular text size */
 }
 
 .toolbar {
@@ -15,13 +42,14 @@
   font-family: Verdana, sans-serif;
   height: var(--toolbar-height);
   width: 100vw;
+  overflow: hidden; /* Prevent scrollbars */
 }
 
 #toolbar-links {
   display: flex;
   gap: 10px;
   padding-left: 20px;
-  padding-top: 40px;
+  padding-top: 20px; /* Match toolbar top margin */
   background-color: var(--color-primary); /* Red only behind the links */
   flex-grow: 1;
   height: var(--toolbar-height);
@@ -46,7 +74,7 @@
 }
 
 #toolbar-links a:hover {
-  background-color: var(--color-primary-hover);
+  background-color: var(--color-secondary);
   color: var(--color-text-light);
   transform: translateY(-2px);
 }
@@ -58,8 +86,10 @@
   background-color: var(--color-bg-transparent); /* Train silhouette background */
 }
 
+/* Ensure train SVG uses the main color variable */
 .toolbar-train img {
-  height: --toolbar-height;
+  height: var(--toolbar-height);
+  color: var(--color-primary); /* This sets currentColor for SVG */
 }
 
 /* Inline SVG train: color using the primary palette variable */
@@ -80,256 +110,10 @@
   height: var(--toolbar-height);
   border: none;
   display: block;
+  margin-top: 20px; /* Adds space above the toolbar */
 }
 
-/* ===== Login styles ===== */
-body {
-  position: relative; /* establish positioning context for body */
-}
-
-#app {
-  overflow: visible; /* allow fixed elements like login to render */
-}
-
-.login-page {
-  /* force center on viewport - use absolute positioning on the viewport scale */
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #f4f6f8 0%, #ffffff 100%);
-  padding: 40px 20px;
-  z-index: 10000;
-  box-sizing: border-box;
-}
-
-.login-card {
-  width: 380px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 6px 24px rgba(16,24,40,0.08);
-  padding: 28px 28px;
-  box-sizing: border-box;
-  position: relative;
-}
-
-.login-brand h1 {
-  margin: 0 0 6px 0;
-  font-size: 22px;
-  color: var(--color-primary);
-}
-.login-brand .muted {
-  margin: 0;
-  font-size: 12px;
-  color: #666;
-}
-
-.login-form {
-  margin-top: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.login-form label {
-  font-size: 12px;
-  color: #444;
-  margin: 0;
-}
-
-.login-form input[type="email"],
-.login-form input[type="password"] {
-  height: 44px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #e6e9ee;
-  font-size: 14px;
-  box-sizing: border-box;
-  margin: 0;
-}
-
-.password-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.password-wrapper input[type="password"],
-.password-wrapper input[type="text"] {
-  height: 44px;
-  padding: 8px 12px 8px 12px;
-  padding-right: 44px;
-  width: 100%;
-  border-radius: 8px;
-  border: 1px solid #e6e9ee;
-  font-size: 14px;
-  box-sizing: border-box;
-  margin: 0;
-}
-
-.eye-btn {
-  position: absolute;
-  right: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  opacity: 0.6;
-  transition: opacity 200ms ease;
-}
-
-.eye-btn:hover {
-  opacity: 1;
-}
-
-.eye-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--color-primary);
-  stroke: var(--color-primary);
-}
-
-.error-message {
-  background-color: #fee;
-  color: #c33;
-  padding: 10px;
-  border-radius: 6px;
-  margin: 0;
-  font-size: 13px;
-  border-left: 4px solid #c33;
-}
-
-.field-error {
-  color: #c33;
-  font-size: 12px;
-  margin: -12px 0 0 0;
-  padding: 4px 8px;
-}
-
-.login-form input.error {
-  border-color: #c33;
-  background-color: #fef5f5;
-}
-
-.login-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 0;
-  font-size: 13px;
-}
-
-.login-actions {
-  margin: 0;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.login-actions button {
-  background: var(--color-primary);
-  color: var(--color-text-light);
-  border: none;
-  padding: 0;
-  height: 44px;
-  width: 100%;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.login-actions button:hover {
-  background: var(--color-primary-hover);
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-  color: #666;
-  margin: 0;
-  gap: 6px;
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: var(--color-primary);
-}
-
-.link-btn {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  cursor: pointer;
-  font-size: 13px;
-  text-decoration: none;
-  padding: 0;
-  font-weight: bold;
-}
-
-.link-btn:hover {
-  text-decoration: underline;
-}
-
-.login-footer {
-  margin-top: 14px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.login-footer p {
-  margin: 0;
-  font-size: 13px;
-  color: #666;
-}
-.login-footer a {
-  color: #666;
-  text-decoration: none;
-  font-size: 13px;
-}
-.login-footer a:hover {
-  text-decoration: underline;
-}
-
-/* Supabase status indicator (small pill) */
-.supabase-indicator {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: #fff;
-  color: #333;
-  border: 1px solid #ddd;
-  box-shadow: 0 1px 4px rgba(16,24,40,0.06);
-}
-.supabase-indicator.online {
-  background: #e6ffef;
-  color: #0a8a4a;
-  border-color: #0a8a4a;
-}
-.supabase-indicator.offline {
-  background: #fff5f5;
-  color: #c33;
-  border-color: #c33;
-}
-
-@media (max-width: 420px) {
-  .login-card { width: 100%; padding: 20px; }
+/* Home view content */
+.home-content {
+  padding: 20px;
 }

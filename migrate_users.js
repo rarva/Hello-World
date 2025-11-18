@@ -1,13 +1,19 @@
 #!/usr/bin/env node
-// Simple migration script to import users from a JSON export into Supabase
-// Usage: set SUPABASE_URL and SUPABASE_SERVICE_KEY (service_role) as env vars,
-// then: node migrate_users.js users_export.json
+/**
+ * User Migration Script for Supabase
+ * ----------------------------------
+ * Imports users from a JSON export file into Supabase using the Admin API.
+ * Usage:
+ *   1. Set SUPABASE_URL and SUPABASE_SERVICE_KEY (service_role) as env vars.
+ *   2. Run: node migrate_users.js users_export.json
+ */
 
 const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 async function main() {
+  // Parse command-line arguments
   const args = process.argv.slice(2);
   if (args.length < 1) {
     console.error('Usage: node migrate_users.js users_export.json');
@@ -19,6 +25,7 @@ async function main() {
     process.exit(2);
   }
 
+  // Read Supabase credentials from environment
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY; // service_role
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
@@ -26,39 +33,54 @@ async function main() {
     process.exit(2);
   }
 
+  // Initialize Supabase client
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
+  // Read and parse user export file
   const raw = fs.readFileSync(file, 'utf8');
   let users = [];
-  try { users = JSON.parse(raw); } catch (e) { console.error('Invalid JSON'); process.exit(2); }
+  try {
+    users = JSON.parse(raw);
+  } catch (e) {
+    console.error('Invalid JSON');
+    process.exit(2);
+  }
 
-  // Expecting users format: { "email": "email:password", ... } or an array
+  // Convert object map to array if needed
   if (!Array.isArray(users)) {
-    // convert object map -> array
     users = Object.keys(users).map(email => ({ email, stored: users[email] }));
   }
 
+  // Migrate each user
   for (const u of users) {
     const email = u.email || (u.stored && u.stored.split(':')[0]);
     if (!email) continue;
 
     try {
-      // Create a user via Admin API (service_role) - create_user method
+      // Create user in Supabase Auth (default password: ChangeMe123!)
       const res = await supabase.auth.admin.createUser({ email, password: 'ChangeMe123!' });
       if (res.error) {
         console.error('Failed to create user', email, res.error.message);
         continue;
       }
 
+      // Insert user profile row
       const userId = res.user.id;
-      // Insert profile row
       const { error: profileErr } = await supabase.from('profiles').insert([{ id: userId, email }]);
-      if (profileErr) console.error('Profile insert error for', email, profileErr.message);
-      else console.log('Imported', email);
+      if (profileErr) {
+        console.error('Profile insert error for', email, profileErr.message);
+      } else {
+        console.log('Imported', email);
+      }
     } catch (err) {
+      // Catch and log any errors during migration
       console.error('Error importing', email, err.message || err);
     }
   }
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+// Run main migration function
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
