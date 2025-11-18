@@ -4,7 +4,7 @@
 // This module handles loading and retrieving strings from strings.json
 
 let stringsData = null;
-let currentLanguage = localStorage.getItem('language') || 'en';
+let currentLanguage = localStorage.getItem('language') || 'pt';
 
 /**
  * Load strings from strings.json
