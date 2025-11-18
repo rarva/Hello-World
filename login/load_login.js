@@ -20,19 +20,38 @@ function checkRememberedUser() {
 }
 
 /**
- * Validate email format using regex.
- * @param {string} email
- * @returns {boolean}
+ * Initialize login form and wire up events
  */
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
+async function initLogin() {
+  // Rule 1: Set all visible text from strings.json ONLY after strings are loaded
+  await loadStrings();
+  if (window.getString) {
+    const setText = (id, key) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = getString(key);
+    };
+    setText('brand-name', 'login.brand_name');
+    setText('brand-subtitle', 'login.brand_subtitle');
+    setText('email-label', 'login.email');
+    setText('password-label', 'login.password');
+    setText('signup-confirm-label', 'login.confirm_password');
+    setText('remember-text', 'login.remember_me');
+    setText('forgot-password', 'login.forgot_password');
+    setText('login-btn', 'login.login');
+    setText('footer-signup-text', 'login.signup');
+    setText('footer-first-use', 'login.first_login');
+    // Placeholders
+    const emailInput = document.getElementById('email');
+    if (emailInput) emailInput.placeholder = getString('login.email_placeholder');
+    const passwordInput = document.getElementById('password');
+    if (passwordInput) passwordInput.placeholder = getString('login.password_placeholder');
+    const confirmInput = document.getElementById('password-confirm');
+    if (confirmInput) confirmInput.placeholder = getString('login.password_placeholder');
+    // Supabase indicator
+    setText('supabase-text', 'login.supabase_offline');
+  }
 
-/**
- * Initialize login form and wire up event handlers.
- */
-function initLogin() {
+  // Continue with event wiring and logic after text is set
   const loginBtn = document.getElementById('login-btn');
   if (loginBtn) {
     loginBtn.addEventListener('click', handleLogin);
