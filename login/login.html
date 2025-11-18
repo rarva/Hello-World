@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Rhomberg</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="./login_styles.css">
+  <script src="../strings_helper.js"></script>
+  <script src="login_error_handling.js" defer></script>
+  <script src="load_login.js" defer></script>
+</head>
+<body>
+<div id="login-page">
+  <div class="login-card">
+    <div id="supabase-indicator" class="supabase-indicator offline" title="Supabase connection status">
+      <span class="status-dot"></span>
+      <span id="supabase-text">Offline</span>
+    </div>
+    
+    <div class="login-brand">
+      <h1 id="brand-name">Rhomberg</h1>
+      <p class="brand-tagline" id="brand-subtitle">OrgChart Admin</p>
+    </div>
+
+    <form id="login-form" class="login-form">
+      <!-- Email Field -->
+      <div class="form-group">
+        <label for="email" id="email-label">Email</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required />
+        <div id="email-error" class="field-error" style="display: none;"></div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password" id="password-label">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" placeholder="••••••••" required />
+          <button type="button" id="toggle-password" class="eye-btn" title="Show/hide password" aria-label="Show/hide password">
+            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+        <div id="password-error" class="field-error" style="display: none;"></div>
+      </div>
+
+      <!-- Confirm Password Field (Signup Only) -->
+      <div class="form-group" id="confirm-group" style="display: none;">
+        <label id="signup-confirm-label" for="password-confirm">Confirm Password</label>
+        <div class="password-wrapper" id="confirm-wrapper">
+          <input type="password" id="password-confirm" name="password-confirm" placeholder="••••••••" />
+          <button type="button" id="toggle-confirm" class="eye-btn" title="Show/hide password" aria-label="Show/hide password">
+            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+        <div id="confirm-error" class="field-error" style="display: none;"></div>
+      </div>
+
+      <!-- Login Options -->
+      <div class="login-options">
+        <label class="checkbox-label">
+          <input type="checkbox" id="remember-me" />
+          <span id="remember-text">Remember me</span>
+        </label>
+      </div>
+
+      <!-- General Error Message -->
+      <div id="general-error" class="error-message" style="display: none;"></div>
+
+      <!-- Action Buttons -->
+      <div class="login-actions">
+        <button type="submit" id="login-btn" class="btn-primary">Login</button>
+      </div>
+    </form>
+
+    <!-- Footer -->
+    <div class="login-footer">
+      <p class="footer-text">First use? <a id="footer-signup-text" class="signup-link">SIGN IN</a></p>
+      <button type="button" class="link-btn forgot-password-btn" id="forgot-password">Forgot password?</button>
+    </div>
+  </div>
+</div>
+<script>
+  // Initialize strings for login page
+  loadStrings().then(() => {
+    // Update brand text
+    document.getElementById('brand-name').textContent = getString('login.brand_name');
+    document.getElementById('brand-subtitle').textContent = getString('login.brand_subtitle');
+    
+    // Update form labels
+    document.getElementById('email-label').textContent = getString('login.email');
+    document.getElementById('password-label').textContent = getString('login.password');
+    document.getElementById('signup-confirm-label').textContent = getString('login.confirm_password');
+    document.getElementById('remember-text').textContent = getString('login.remember_me');
+    document.getElementById('forgot-password').textContent = getString('login.forgot_password');
+    document.getElementById('login-btn').textContent = getString('login.login');
+    
+    
+    // Update input placeholders
+    document.getElementById('email').placeholder = getString('login.email_placeholder');
+    document.getElementById('password').placeholder = getString('login.password_placeholder');
+    document.getElementById('password-confirm').placeholder = getString('login.password_placeholder');
+    
+    // Update Supabase indicator text
+    document.getElementById('supabase-text').textContent = getString('login.supabase_offline');
+  });
+</script>
+</body>
+</html>

@@ -1,7 +1,10 @@
-// Lightweight Supabase client initializer for a static site.
-// This file creates a module script that imports the ESM Supabase bundle
-// and attaches a `supabase` client to `window.supabase`.
 
+/**
+ * Supabase Client Initializer for Static Sites
+ * --------------------------------------------
+ * Loads Supabase client if config is present, otherwise falls back to localStorage.
+ * This allows the app to run in demo mode without cloud auth.
+ */
 (function(){
   const url = window.SUPABASE_URL || '';
   const anon = window.SUPABASE_ANON_KEY || '';
@@ -12,7 +15,7 @@
     return;
   }
 
-  // Create a module script that imports createClient and sets window.supabase
+  // Dynamically create a module script to import Supabase and attach to window.supabase
   const moduleScript = document.createElement('script');
   moduleScript.type = 'module';
   moduleScript.textContent = `

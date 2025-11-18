@@ -2,25 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Modular App Shell</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rhomberg - OrgChart Admin</title>
+  <!-- Favicon and alternate icon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="alternate icon" href="/favicon.ico" />
+  <!-- Main stylesheet -->
   <link rel="stylesheet" href="styles.css" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      font-family: Verdana, sans-serif;
-    }
-
-    #app {
-      width: 100vw;
-      height: 100vh;
-      overflow: visible;
-    }
-  </style>
+  <!-- Strings helper for i18n -->
+  <script src="strings_helper.js"></script>
 </head>
 <body>
+  <!-- Language switcher: allows user to change app language -->
+  <div id="language-switcher" style="position: absolute; top: 18px; right: 24px; z-index: 10001;">
+    <button id="lang-btn" style="background: none; border: none; cursor: pointer;">
+      <!-- Globe icon SVG -->
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M2 12h20"/>
+        <path d="M12 2a15.3 15.3 0 0 1 0 20"/>
+        <path d="M12 2a15.3 15.3 0 0 0 0 20"/>
+      </svg>
+    </button>
+    <select id="lang-select" style="display:none; position: absolute; top: 36px; right: 0; background: white; border: 1px solid #ccc; border-radius: 6px; padding: 4px 12px; font-size: 16px;">
+      <option value="en">English</option>
+      <option value="pt">Português</option>
+    </select>
+  </div>
+  <!-- Main app container -->
   <div id="app"></div>
+  <!-- Main app logic -->
   <script src="load_control.js"></script>
+  <script>
+    // Initialize strings and language switcher
+    loadStrings().then(() => {
+      const langBtn = document.getElementById('lang-btn');
+      const langSelect = document.getElementById('lang-select');
+
+      // Set initial language in select
+      langSelect.value = getLanguage();
+
+      // Toggle language dropdown
+      langBtn.addEventListener('click', () => {
+        langSelect.style.display = langSelect.style.display === 'none' ? 'block' : 'none';
+      });
+
+      // Change language
+      langSelect.addEventListener('change', (e) => {
+        setLanguage(e.target.value);
+        langSelect.style.display = 'none';
+        // Reload the page to apply new language
+        location.reload();
+      });
+    });
+  </script>
 </body>
 </html>

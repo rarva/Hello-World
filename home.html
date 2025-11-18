@@ -1,4 +1,14 @@
+<!-- Home Page: Main app shell -->
 <div id="home-container">
+  <!-- Toolbar iframe: loads toolbar.html -->
   <iframe src="toolbar.html" class="toolbar-frame" title="Toolbar"></iframe>
-  <div style="padding:20px;">Welcome to the app shell!</div>
+  <!-- Main content area -->
+  <div class="home-content" id="home-title">Welcome to the app shell!</div>
 </div>
+
+<script>
+  // Update home title with localized string
+  if (document.getElementById('home-title')) {
+    document.getElementById('home-title').textContent = getString('app.home_title');
+  }
+</script>

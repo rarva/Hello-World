@@ -11,7 +11,40 @@
     },
     "app": {
       "welcome": "Welcome to the app",
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "home_title": "Welcome to the app shell!"
+    },
+    "login": {
+      "login": "Log In",
+      "signup": "Sign Up",
+      "back_to_login": "Back to Log In",
+      "email": "Email",
+      "password": "Password",
+      "confirm_password": "Confirm Password",
+      "remember_me": "Remember me",
+      "forgot_password": "Forgot password?",
+      "first_login": "First login?",
+      "show_hide_password": "Show/hide password",
+      "supabase_connected": "Supabase: Connected",
+      "supabase_offline": "Supabase: Offline",
+      "email_required": "Email is required",
+      "password_required": "Password is required",
+      "invalid_email": "Please enter a valid email address",
+      "passwords_dont_match": "Passwords do not match",
+      "email_already_registered": "Email already registered",
+      "account_created": "Account created! Please sign in.",
+      "invalid_credentials": "Invalid email or password",
+      "login_failed": "Login failed",
+      "signup_failed": "Signup failed",
+      "signup_error": "Signup failed",
+      "brand_name": "Rhomberg",
+      "brand_subtitle": "OrgChart Admin",
+      "email_placeholder": "you@example.com",
+      "password_placeholder": "••••••••",
+      "remember_text": "Don't have an account?",
+      "privacy_policy": "Privacy Policy",
+      "toolbar_loading": "Loading toolbar...",
+      "toolbar_error": "Toolbar failed to load."
     }
   },
   "pt": {
@@ -26,7 +59,40 @@
     },
     "app": {
       "welcome": "Bem-vindo à aplicação",
-      "loading": "A carregar..."
+      "loading": "A carregar...",
+      "home_title": "Bem-vindo ao shell da aplicação!"
+    },
+    "login": {
+      "login": "Entrar",
+      "signup": "Registrar",
+      "back_to_login": "Voltar para Entrar",
+      "email": "Email",
+      "password": "Senha",
+      "confirm_password": "Confirmar Senha",
+      "remember_me": "Lembrar-me",
+      "forgot_password": "Esqueceu a password?",
+      "first_login": "Primeiro acesso?",
+      "show_hide_password": "Mostrar/ocultar senha",
+      "supabase_connected": "Supabase: Conectado",
+      "supabase_offline": "Supabase: Offline",
+      "email_required": "Email é obrigatório",
+      "password_required": "Senha é obrigatória",
+      "invalid_email": "Por favor, insira um endereço de email válido",
+      "passwords_dont_match": "Senhas não correspondem",
+      "email_already_registered": "Email já registrado",
+      "account_created": "Conta criada! Por favor, faça login.",
+      "invalid_credentials": "Email ou senha inválidos",
+      "login_failed": "Falha no login",
+      "signup_failed": "Falha no registro",
+      "signup_error": "Falha no registro",
+      "brand_name": "Rhomberg",
+      "brand_subtitle": "OrgChart Admin",
+      "email_placeholder": "voce@example.com",
+      "password_placeholder": "••••••••",
+      "remember_text": "Não tem conta?",
+      "privacy_policy": "Política de Privacidade",
+      "toolbar_loading": "A carregar toolbar...",
+      "toolbar_error": "Falha ao carregar toolbar."
     }
   }
 }
