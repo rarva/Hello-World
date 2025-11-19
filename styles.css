@@ -120,3 +120,28 @@ html, body {
 .home-content {
   padding: 20px;
 }
+
+/* Login and shell containers */
+#login-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+#shell-container {
+  flex: 1;
+  overflow: auto;
+  display: none;
+}
+
+#shell-container.visible {
+  display: flex;
+}
+
+#home-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

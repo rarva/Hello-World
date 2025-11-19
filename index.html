@@ -17,13 +17,17 @@
   <script src="config.js"></script>
   <!-- Supabase client initialization -->
   <script src="supabase_client.js"></script>
+  <!-- Login form logic -->
+  <script src="login/load_login.js"></script>
 </head>
 <body>
   <!-- Main view container -->
   <div id="main-container">
-    <!-- Placeholder login container - never removed, always in correct position -->
+    <!-- Placeholder login container - hidden after login -->
     <div id="login-container"></div>
-    <!-- Placeholder footer container - never removed, always stays at bottom -->
+    <!-- Placeholder shell container - shown after login -->
+    <div id="shell-container"></div>
+    <!-- Placeholder footer container - always at bottom -->
     <div id="footer-container"></div>
   </div>
   <!-- Main app logic -->
