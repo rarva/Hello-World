@@ -3,10 +3,18 @@ Rhomberg OrgChart Admin - Multi-language authentication system with Supabase bac
 
 Company colors: #DA162A (Dark Red), #EB8318 (Orange), #010101 (Black)
 
-## Current Version: v1.0.0-auth-system
+## Current Version: v1.0.0-auth-system (Latest: Refactored & Polished)
 
 ### Development Status: ✅ STABLE
-Complete authentication and multi-language system implemented and tested.
+Complete authentication and multi-language system implemented, tested, and refactored for code quality.
+
+### Latest Update (Current Commit)
+- **Code restructuring:** Standardized file naming convention (load_*.js → *_init.js)
+- **Auth logic separation:** Split login module into login_init.js (UI) + login_auth.js (authentication)
+- **UI Polish:** Removed animation jank, improved focus states, better password visibility
+- **HTML cleanup:** Removed unused IDs, added missing elements, improved accessibility
+- **CSS centralization:** --color-button variable for global button color control
+- **Directory normalization:** Lowercase asset paths (Assets/Images → assets/images)
 
 ---
 
@@ -189,7 +197,43 @@ python -m http.server 8000
 
 This project supports a low-cost, safe deployment pattern where runtime Supabase keys
 are injected at build time by GitHub Actions. The repo should never contain `service_role`
-keys or any admin credentials.
+---
+
+## Recent Refactoring (v1.0.0-auth-system cleanup)
+
+### File Organization Improvements
+- **Standardized naming:** All module loaders renamed from `load_*.js` to `*_init.js`
+  - `load_login.js` → `login_init.js` + new `login_auth.js` (auth logic)
+  - `load_footer.js` → `footer_init.js`
+  - `load_home.js` → `home_init.js`
+  - `load_toolbar.js` → `toolbar_init.js`
+- **Removed obsolete files:** `load_control.js`, `lang_switcher.js`, deprecated error handlers
+- **Directory normalization:** `Assets/Images/` → `assets/images/` (lowercase consistency)
+
+### HTML & ID Cleanup
+- **Removed unused IDs:** `language-switcher`, `confirm-wrapper`, `general-error`
+- **Added missing element:** `signup-btn` (was referenced in JS but didn't exist)
+- **Improved accessibility:** Added `tabindex="0"` to signup link for keyboard focus
+
+### UI/UX Polish
+- **Password visibility:** Increased bullet size to 30px for better readability
+- **Animation refinement:** Removed font-size animation jank on password toggle
+- **Focus states:** Removed large focus outlines from language button and eye button
+- **Eye button:** Now 54px circles with opacity control (0.5 hidden, 1.0 showing)
+
+### CSS Improvements
+- **Centralized button colors:** New `--color-button` variable (set to #EB8318 orange)
+- **Login button:** Now uses `--color-button` for easy global control
+- **Cleaned styling:** Removed blank lines, unused selectors, inconsistent spacing
+- **Unified containers:** `.login-wrapper` now matches `#login-container` styling
+
+### Developer Experience
+- **Translation updates:** Brand subtitle now includes "- OrgChart" (all 5 languages)
+- **String consistency:** Password placeholder standardized to small dots (••••••••)
+
+---
+
+## Deployment & Configuration
 
 Quick setup:
 
