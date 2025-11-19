@@ -1,2 +1,5 @@
 # Ignore local runtime config with secrets
 config.js
+
+# Copilot guide (for agent use only)
+COPILOT_GUIDE.txt

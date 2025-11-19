@@ -24,6 +24,7 @@ async function initFooter() {
   // Setup logout button
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
+    logoutBtn.textContent = getString('app.logout');
     logoutBtn.addEventListener('click', handleLogout);
   }
 }
@@ -35,7 +36,8 @@ async function handleLogout() {
   if (window.supabase) {
     try {
       await window.supabase.auth.signOut();
-      localStorage.removeItem('rememberedEmail');
+      // Don't remove rememberedEmail - keep it so user can quickly log back in
+      // Only Supabase tokens are cleared by signOut()
       window.location.href = 'index.html';
     } catch (err) {
       console.error('Logout error:', err);

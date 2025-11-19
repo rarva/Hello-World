@@ -27,9 +27,27 @@ function isValidEmail(email) {
  * Navigate to a view/page
  */
 function loadView(viewName) {
-  // Placeholder: can be replaced with router logic
-  console.log('Loading view:', viewName);
-  window.location.href = '/' + viewName + '.html';
+  // Hide login container
+  const loginContainer = document.getElementById('login-container');
+  if (loginContainer) {
+    loginContainer.style.display = 'none';
+  }
+  
+  // Load shell content into shell container
+  const shellContainer = document.getElementById('shell-container');
+  if (shellContainer) {
+    fetch(viewName + '.html')
+      .then(res => res.text())
+      .then(html => {
+        shellContainer.innerHTML = html;
+        shellContainer.style.display = 'flex';
+      })
+      .catch(err => {
+        console.error('Failed to load view:', err);
+        shellContainer.innerHTML = '<div style="color:red">Failed to load ' + viewName + '.</div>';
+        shellContainer.style.display = 'flex';
+      });
+  }
 }
 
 /**
@@ -174,11 +192,6 @@ async function initLogin() {
   // ...existing code...
 
   // Continue with event wiring and logic after text is set
-  const loginBtn = document.getElementById('login-btn');
-  if (loginBtn) {
-    loginBtn.addEventListener('click', handleLogin);
-  }
-
   // Wire form submit event so validation runs on Enter or button click
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
@@ -407,6 +420,17 @@ async function handleLogin(e) {
           localStorage.setItem('rememberedEmail', email);
         } else {
           localStorage.removeItem('rememberedEmail');
+        }
+
+        // Fetch user's language preference from profile
+        const { data: profileData, error: profileError } = await window.supabase
+          .from('profiles')
+          .select('language')
+          .eq('email', email)
+          .single();
+        
+        if (profileData && profileData.language && typeof updateLanguageFromProfile === 'function') {
+          updateLanguageFromProfile(profileData.language);
         }
 
         loadView('home');

@@ -292,5 +292,12 @@
     "de": "Falsches Passwort", 
     "fr": "Mot de passe incorrect", 
     "it": "Password errata" 
+  },
+  "app.logout": { 
+    "en": "Logout", 
+    "pt": "Sair", 
+    "de": "Abmelden", 
+    "fr": "Déconnexion", 
+    "it": "Esci" 
   }
 }

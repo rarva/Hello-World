@@ -4,7 +4,54 @@
 // This module handles loading and retrieving strings from strings.json
 
 let stringsData = null;
-let currentLanguage = localStorage.getItem('language') || 'pt';
+let currentLanguage = null;
+
+// Supported languages
+const SUPPORTED_LANGUAGES = ['en', 'pt', 'de', 'fr', 'it'];
+
+/**
+ * Initialize language on app start
+ * - Check localStorage first (persisted preference)
+ * - Then try to detect browser/system language
+ * - Fallback to English
+ */
+function initializeLanguage() {
+  // First check if user has a saved preference in localStorage
+  if (localStorage.getItem('language')) {
+    currentLanguage = localStorage.getItem('language');
+    return currentLanguage;
+  }
+  
+  // No saved preference, detect browser language
+  const browserLang = detectBrowserLanguage();
+  currentLanguage = browserLang;
+  localStorage.setItem('language', browserLang);
+  return currentLanguage;
+}
+
+/**
+ * Detect browser/system language
+ * @returns {string} Language code (en, pt, de, fr, it) or 'en' as fallback
+ */
+function detectBrowserLanguage() {
+  // Get browser language (e.g., 'pt-BR', 'en-US', 'de')
+  const browserLangs = navigator.languages || [navigator.language];
+  
+  for (const lang of browserLangs) {
+    // Extract primary language code (e.g., 'pt' from 'pt-BR')
+    const primaryLang = lang.split('-')[0].toLowerCase();
+    
+    // Check if it's a supported language
+    if (SUPPORTED_LANGUAGES.includes(primaryLang)) {
+      console.log('Detected browser language:', primaryLang);
+      return primaryLang;
+    }
+  }
+  
+  // Fallback to English
+  console.log('Browser language not supported, defaulting to English');
+  return 'en';
+}
 
 /**
  * Load strings from strings.json
@@ -13,6 +60,11 @@ async function loadStrings() {
   try {
     const response = await fetch('strings.json');
     stringsData = await response.json();
+    
+    // Initialize language on first load
+    if (!currentLanguage) {
+      initializeLanguage();
+    }
   } catch (err) {
     console.error('Failed to load strings:', err);
     stringsData = {};
@@ -40,8 +92,10 @@ function getString(keyPath) {
  * @param {string} lang - Language code (e.g., 'en', 'pt')
  */
 function setLanguage(lang) {
-  currentLanguage = lang;
-  localStorage.setItem('language', lang);
+  if (SUPPORTED_LANGUAGES.includes(lang)) {
+    currentLanguage = lang;
+    localStorage.setItem('language', lang);
+  }
 }
 
 /**
@@ -49,5 +103,21 @@ function setLanguage(lang) {
  * @returns {string} The current language code
  */
 function getLanguage() {
+  // Make sure language is initialized
+  if (!currentLanguage) {
+    initializeLanguage();
+  }
   return currentLanguage;
+}
+
+/**
+ * Update language from user's profile after login
+ * @param {string} profileLanguage - Language code from database
+ */
+function updateLanguageFromProfile(profileLanguage) {
+  if (profileLanguage && SUPPORTED_LANGUAGES.includes(profileLanguage)) {
+    currentLanguage = profileLanguage;
+    localStorage.setItem('language', profileLanguage);
+    console.log('Updated language from profile:', profileLanguage);
+  }
 }
