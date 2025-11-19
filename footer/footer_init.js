@@ -3,9 +3,34 @@
 // ===============================
 // Handles app-wide notifications/info in the footer
 
+/**
+ * Initialize footer container: load HTML and styles
+ */
+function initFooterContainer() {
+  fetch('footer/footer.html')
+    .then(res => res.text())
+    .then(html => {
+      const footerContainer = document.getElementById('footer-container');
+      footerContainer.innerHTML = html;
+      
+      // Load footer styles
+      const style = document.createElement('link');
+      style.rel = 'stylesheet';
+      style.href = 'footer/footer_styles.css';
+      document.head.appendChild(style);
+      
+      // Initialize footer after HTML is present
+      initFooter();
+    })
+    .catch(err => {
+      showFooterError('Failed to load footer');
+      console.error('Failed to load footer:', err);
+    });
+}
 
-
-// Footer initialization logic (mirroring login)
+/**
+ * Initialize footer after HTML is loaded
+ */
 async function initFooter() {
   await loadStrings();
   if (window.getString) {
@@ -44,11 +69,4 @@ async function handleLogout() {
       alert('Logout failed');
     }
   }
-}
-
-// Run footer init after DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initFooter);
-} else {
-  initFooter();
 }

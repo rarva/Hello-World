@@ -4,33 +4,45 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rhomberg - OrgChart Admin</title>
-  <!-- Favicon and alternate icon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="alternate icon" href="/favicon.ico" />
+  <!-- Favicon - Rhomberg company colors (red, orange, black bars) -->
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
   <!-- Main stylesheet -->
   <link rel="stylesheet" href="styles.css" />
   <!-- Login form stylesheet -->
   <link rel="stylesheet" href="login/login_styles.css" />
+  <!-- Home stylesheet -->
+  <link rel="stylesheet" href="home/home_styles.css" />
   <!-- Strings helper for i18n -->
   <script src="strings_helper.js"></script>
   <!-- Supabase configuration (load first) -->
   <script src="config.js"></script>
   <!-- Supabase client initialization -->
   <script src="supabase_client.js"></script>
-  <!-- Login form logic -->
-  <script src="login/load_login.js"></script>
 </head>
 <body>
   <!-- Main view container -->
   <div id="main-container">
     <!-- Placeholder login container - hidden after login -->
     <div id="login-container"></div>
-    <!-- Placeholder shell container - shown after login -->
-    <div id="shell-container"></div>
+    <!-- Placeholder toolbar container - shown after login -->
+    <div id="toolbar-container"></div>
+    <!-- Placeholder home container - shown after login -->
+    <div id="home-container"></div>
     <!-- Placeholder footer container - always at bottom -->
     <div id="footer-container"></div>
   </div>
-  <!-- Main app logic -->
-  <script src="load_control.js"></script>
+  <!-- Module loading (all init files follow same pattern) -->
+  <script src="login/login_init.js"></script>
+  <script src="login/login_auth.js"></script>
+  <script src="toolbar/toolbar_init.js"></script>
+  <script src="home/home_init.js"></script>
+  <script src="footer/footer_init.js"></script>
+  <!-- Error handling modules -->
+  <script src="login/login_errors.js"></script>
+  <script src="toolbar/toolbar_errors.js"></script>
+  <script src="home/home_errors.js"></script>
+  <script src="footer/footer_errors.js"></script>
+  <!-- Main app orchestration -->
+  <script src="main.js"></script>
 </body>
 </html>

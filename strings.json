@@ -231,11 +231,11 @@
     "it": "Rhomberg" 
   },
   "login.brand_subtitle": { 
-    "en": "OrgChart Admin", 
-    "pt": "OrgChart Admin", 
-    "de": "OrgChart Admin", 
-    "fr": "OrgChart Admin", 
-    "it": "OrgChart Admin" 
+    "en": "The company's elusive unicorn - OrgChart", 
+    "pt": "O unicórnio esquivo da empresa - OrgChart", 
+    "de": "Das elusive Einhorn des Unternehmens - OrgChart", 
+    "fr": "La licorne insaisissable de l'entreprise - OrgChart", 
+    "it": "L'unicorno sfuggente dell'azienda - OrgChart" 
   },
   "login.email_placeholder": { 
     "en": "you@example.com", 
