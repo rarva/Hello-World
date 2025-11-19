@@ -1,9 +1,8 @@
-<!-- login.html now contains only the body markup and scripts for partial loading -->
-
-<div id="login-container">
+<!-- Login form content (wrapped for proper layout inheritance) -->
+<div class="login-wrapper">
   <div class="login-card">
     <h1 id="brand-name" style="margin: 0; padding-top: 18px; float: left;"></h1>
-    <div id="language-switcher" style="float: right; padding-top: 18px; display: flex; align-items: center; gap: 8px;">
+    <div style="float: right; padding-top: 18px; display: flex; align-items: center; gap: 8px;">
       <select id="lang-select" style="display:none;">
         <option value="en">English</option>
         <option value="pt">Português</option>
@@ -45,7 +44,7 @@
       <!-- Confirm Password Field (Signup Only) -->
       <div class="form-group" id="confirm-group" style="display: none;">
         <label id="signup-confirm-label" for="password-confirm"></label>
-        <div class="password-wrapper" id="confirm-wrapper">
+        <div class="password-wrapper">
           <input type="password" id="password-confirm" name="password-confirm" placeholder="" />
           <button type="button" id="toggle-confirm" class="eye-btn" title="" aria-label="Show/hide password">
             <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -63,20 +62,16 @@
           <span id="remember-text"></span>
         </label>
       </div>
-      <!-- General Error Message -->
-      <div id="general-error" class="error-message" style="display: none;"></div>
       <!-- Action Buttons -->
       <div class="login-actions">
         <button type="submit" id="login-btn" class="btn-primary"></button>
+        <button type="button" id="signup-btn" class="btn-secondary" style="display: none;"></button>
       </div>
     </form>
     <!-- Footer -->
     <div class="login-footer">
-      <p class="footer-text"><span id="footer-first-use"></span> <a id="footer-signup-text" class="signup-link"></a></p>
+      <p class="footer-text"><span id="footer-first-use"></span> <a id="footer-signup-text" class="signup-link" tabindex="0"></a></p>
       <button type="button" class="link-btn forgot-password-btn" id="forgot-password"></button>
     </div>
   </div>
 </div>
-<script src="../strings_helper.js"></script>
-<script src="login_error_handling.js"></script>
-<script src="load_login.js" defer></script>

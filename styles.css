@@ -17,12 +17,57 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: var(--color-bg);
+}
+
+/* ===== CONTAINER STYLES ===== */
+#login-container {
+  flex: 1;
+  width: 100%;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 10000;
+}
+
+#toolbar-container {
+  width: 100%;
+  display: none;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+#toolbar-container.visible {
+  display: flex;
+}
+
+#home-container {
+  flex: 1;
+  width: 100%;
+  display: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 50;
+}
+
+#home-container.visible {
+  display: flex;
+}
+
+#footer-container {
+  width: 100%;
+  display: flex;
+  flex-shrink: 0;
+  z-index: 99;
 }
 
 /* ===== COLOR PALETTE ===== */
 :root {
   --color-primary: #DA162A;        /* Dark Red */
   --color-secondary: #EB8318;      /* Secondary Orange */
+  --color-button: #DA162A;         /* Button color (Orange) */
   --color-black: #010101;          /* Black */
   --color-text-light: white;
   --color-text-dark: #333;         /* Dark text */
@@ -38,110 +83,9 @@ html, body {
   --font-size-regular: 12px;       /* Global regular text size */
 }
 
-.toolbar {
-  display: flex;
-  align-items: center;
-  background-color: var(--color-bg-transparent); /* Let us control background zones manually */
-  font-family: Verdana, sans-serif;
-  height: var(--toolbar-height);
-  width: 100vw;
-  overflow: hidden; /* Prevent scrollbars */
-}
-
-#toolbar-links {
-  display: flex;
-  gap: 10px;
-  padding-left: 20px;
-  padding-top: 20px; /* Match toolbar top margin */
-  background-color: var(--color-primary); /* Red only behind the links */
-  flex-grow: 1;
-  height: var(--toolbar-height);
-}
-
-#toolbar-links a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: calc(var(--toolbar-height) / 3);
-  min-width: 110px;
-  margin: 0 8px; /* vertical centering handled by parent */
-  padding: 0 18px;
-  background-color: var(--color-text-light); /* white button */
-  color: var(--color-primary); /* text uses primary color */
-  text-align: center;
-  text-decoration: none;
-  border-radius: 8px;
-  box-sizing: border-box;
-  box-shadow: none;
-  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
-}
-
-#toolbar-links a:hover {
-  background-color: var(--color-secondary);
-  color: var(--color-text-light);
-  transform: translateY(-2px);
-}
-
-.toolbar-train {
-  display: flex;
-  align-items: center;
-  padding-right: 20px;
-  background-color: var(--color-bg-transparent); /* Train silhouette background */
-}
-
-/* Ensure train SVG uses the main color variable */
-.toolbar-train img {
-  height: var(--toolbar-height);
-  color: var(--color-primary); /* This sets currentColor for SVG */
-}
-
-/* Inline SVG train: color using the primary palette variable */
-.toolbar-train svg,
-.toolbar-train .inline-train-svg {
-  /* match the toolbar height so the train scales with the toolbar */
-  height: var(--toolbar-height);
-  width: auto;
-  /* ensure both fill and currentColor-based fills are covered */
-  color: var(--color-primary);
-  fill: var(--color-primary);
-  stroke: none;
-}
-
-/* iframe in the home view that hosts the toolbar should match the toolbar height */
-.toolbar-frame {
-  width: 100%;
-  height: var(--toolbar-height);
-  border: none;
-  display: block;
-  margin-top: 20px; /* Adds space above the toolbar */
-}
+/* Toolbar styles consolidated in toolbar/toolbar_styles.css */
 
 /* Home view content */
 .home-content {
   padding: 20px;
-}
-
-/* Login and shell containers */
-#login-container {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-}
-
-#shell-container {
-  flex: 1;
-  overflow: auto;
-  display: none;
-}
-
-#shell-container.visible {
-  display: flex;
-}
-
-#home-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
