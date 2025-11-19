@@ -29,19 +29,10 @@ function getString(keyPath) {
     console.warn('Strings not loaded yet');
     return keyPath;
   }
-
-  const keys = keyPath.split('.');
-  let value = stringsData[currentLanguage];
-
-  for (let key of keys) {
-    if (value && typeof value === 'object') {
-      value = value[key];
-    } else {
-      return keyPath; // Return keyPath if not found
-    }
+  if (stringsData[keyPath] && stringsData[keyPath][currentLanguage]) {
+    return stringsData[keyPath][currentLanguage];
   }
-
-  return value || keyPath;
+  return keyPath;
 }
 
 /**

@@ -7,8 +7,17 @@
 </div>
 
 <script>
-  // Update home title with localized string
-  if (document.getElementById('home-title')) {
-    document.getElementById('home-title').textContent = getString('app.home_title');
+  // Wait for strings to be loaded before using getString
+  if (typeof loadStrings === 'function') {
+    loadStrings().then(() => {
+      if (document.getElementById('home-title') && typeof getString === 'function') {
+        document.getElementById('home-title').textContent = getString('app.home_title');
+      }
+    });
+  } else {
+    // Fallback if loadStrings doesn't exist
+    if (document.getElementById('home-title') && typeof getString === 'function') {
+      document.getElementById('home-title').textContent = getString('app.home_title');
+    }
   }
 </script>

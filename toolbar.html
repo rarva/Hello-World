@@ -18,21 +18,24 @@
   <script>
     // Load strings and initialize toolbar
     loadStrings().then(() => {
-      const language = getLanguage();
       const container = document.getElementById('toolbar-links');
-      const labels = stringsData[language]?.toolbar;
       
-      if (!container || !labels) return;
+      if (!container) return;
 
       container.innerHTML = '';
 
       // Create navigation links for each toolbar item
-      for (const key in labels) {
-        const a = document.createElement('a');
-        a.href = key + '.html';
-        a.textContent = labels[key];
-        container.appendChild(a);
-      }
+      const toolbarKeys = ['home', 'about', 'contact']; // Add your toolbar keys here
+      toolbarKeys.forEach(key => {
+        const toolbarKey = `toolbar.${key}`;
+        const text = getString(toolbarKey);
+        if (text) {
+          const a = document.createElement('a');
+          a.href = key + '.html';
+          a.textContent = text;
+          container.appendChild(a);
+        }
+      });
 
       // Add train SVG inline for full CSS control
       const trainContainer = document.querySelector('.toolbar-train');

@@ -3,18 +3,100 @@
 // ===============================
 // This module handles all login and signup logic, separated from load_control.js
 
+// Global app state - initialize only after checking localStorage safely
+window.app = window.app || {
+  isSignupMode: false,
+  users: (() => {
+    try {
+      return JSON.parse(localStorage.getItem('users') || '{}');
+    } catch (e) {
+      return {};
+    }
+  })()
+};
+
 /**
- * If a user is remembered, pre-fill login fields and check the box.
+ * Validate email format
+ */
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Navigate to a view/page
+ */
+function loadView(viewName) {
+  // Placeholder: can be replaced with router logic
+  console.log('Loading view:', viewName);
+  window.location.href = '/' + viewName + '.html';
+}
+
+/**
+ * Initialize Supabase client
+ */
+function initSupabase() {
+  // Placeholder for Supabase initialization
+  // In production, this would set up window.supabase and window.SUPABASE_URL
+  console.log('Supabase initialization placeholder');
+}
+
+/**
+ * Show a field-specific error message and highlight the field.
+ * @param {string} field - Field name ('email', 'password', 'confirm')
+ * @param {string} message - Error message
+ */
+function showFieldError(field, message) {
+  const errorId = field === 'confirm' ? 'confirm-error' : `${field}-error`;
+  const inputId = field === 'confirm' ? 'password-confirm' : field;
+  const errorEl = document.getElementById(errorId);
+  const inputEl = document.getElementById(inputId);
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
+  }
+  if (inputEl) {
+    inputEl.classList.add('error');
+  }
+}
+
+/**
+ * Show a general error or info message at the top of the form.
+ * @param {string} message
+ */
+function showGeneralMessage(message) {
+  const generalError = document.getElementById('general-error');
+  if (generalError) {
+    generalError.textContent = message;
+    generalError.style.display = 'block';
+  }
+}
+
+/**
+ * Clear all error messages and field highlights in the form.
+ */
+function clearAllErrors() {
+  const errorIds = ['email-error', 'password-error', 'confirm-error', 'general-error'];
+  const inputIds = ['email', 'password', 'password-confirm'];
+  errorIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  inputIds.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.classList.remove('error');
+  });
+}
+
+/**
+ * If a user is remembered, pre-fill the email field and check the box.
  */
 function checkRememberedUser() {
-  const remembered = localStorage.getItem('rememberedUser');
+  const remembered = localStorage.getItem('rememberedEmail');
   if (remembered) {
-    const [email, password] = remembered.split(':');
     const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
     const rememberCheckbox = document.getElementById('remember-me');
-    if (emailInput) emailInput.value = email;
-    if (passwordInput) passwordInput.value = password;
+    if (emailInput) emailInput.value = remembered;
     if (rememberCheckbox) rememberCheckbox.checked = true;
   }
 }
@@ -23,6 +105,46 @@ function checkRememberedUser() {
  * Initialize login form and wire up events
  */
 async function initLogin() {
+  // Wait for Supabase to be ready if it's configured
+  if (window.SUPABASE_URL && !window.supabaseReady) {
+    await new Promise(resolve => {
+      const checkSupabase = setInterval(() => {
+        if (window.supabaseReady || window.supabase) {
+          clearInterval(checkSupabase);
+          resolve();
+        }
+      }, 100);
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        clearInterval(checkSupabase);
+        resolve();
+      }, 5000);
+    });
+  }
+
+  // Language switcher logic for login view
+  var langBtn = document.getElementById('lang-btn');
+  var langSelect = document.getElementById('lang-select');
+  
+  // Only set language if element exists
+  if (langSelect && typeof getLanguage === 'function') {
+    try {
+      langSelect.value = getLanguage();
+    } catch (e) {
+      console.warn('Failed to set language select value:', e);
+    }
+  }
+  
+  if (langBtn && langSelect) {
+    langBtn.addEventListener('click', function() {
+      langSelect.style.display = langSelect.style.display === 'none' ? 'block' : 'none';
+    });
+    langSelect.addEventListener('change', function(e) {
+      setLanguage(e.target.value);
+      langSelect.style.display = 'none';
+      location.reload();
+    });
+  }
   // Rule 1: Set all visible text from strings.json ONLY after strings are loaded
   await loadStrings();
   if (window.getString) {
@@ -47,14 +169,20 @@ async function initLogin() {
     if (passwordInput) passwordInput.placeholder = getString('login.password_placeholder');
     const confirmInput = document.getElementById('password-confirm');
     if (confirmInput) confirmInput.placeholder = getString('login.password_placeholder');
-    // Supabase indicator
-    setText('supabase-text', 'login.supabase_offline');
   }
+
+  // ...existing code...
 
   // Continue with event wiring and logic after text is set
   const loginBtn = document.getElementById('login-btn');
   if (loginBtn) {
     loginBtn.addEventListener('click', handleLogin);
+  }
+
+  // Wire form submit event so validation runs on Enter or button click
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
   }
 
   const footerSignupText = document.getElementById('footer-signup-text');
@@ -80,9 +208,6 @@ async function initLogin() {
 
   // Restore remembered user
   checkRememberedUser();
-
-  // Initialize Supabase indicator/client
-  initSupabase();
 }
 
 /**
@@ -104,15 +229,23 @@ function toggleSignupMode() {
   const confirmGroup = document.getElementById('confirm-group');
   const loginBtn = document.getElementById('login-btn');
   const signupBtn = document.getElementById('signup-btn');
+  const footerFirstUse = document.getElementById('footer-first-use');
+  const footerSignupText = document.getElementById('footer-signup-text');
 
   if (app.isSignupMode) {
     if (confirmGroup) confirmGroup.style.display = 'block';
     if (loginBtn) loginBtn.textContent = getString('login.signup');
     if (signupBtn) signupBtn.textContent = getString('login.back_to_login');
+    // Change footer message to "Already have an account? Login"
+    if (footerFirstUse) footerFirstUse.textContent = getString('login.already_registered');
+    if (footerSignupText) footerSignupText.textContent = getString('login.login');
   } else {
     if (confirmGroup) confirmGroup.style.display = 'none';
     if (loginBtn) loginBtn.textContent = getString('login.login');
     if (signupBtn) signupBtn.textContent = getString('login.signup');
+    // Change footer message back to "First login? Sign up"
+    if (footerFirstUse) footerFirstUse.textContent = getString('login.first_login');
+    if (footerSignupText) footerSignupText.textContent = getString('login.signup');
   }
   clearAllErrors();
 }
@@ -139,7 +272,8 @@ async function handleLogin(e) {
     return;
   }
 
-  const supabaseAvailable = !!(window.supabase && window.SUPABASE_URL);
+  // Check if Supabase is available (check for both window.supabase and window.SUPABASE_URL)
+  const supabaseAvailable = !!(window.supabase && window.SUPABASE_URL && window.supabaseReady);
 
   if (app.isSignupMode) {
     // Handle signup
@@ -152,42 +286,81 @@ async function handleLogin(e) {
 
     if (supabaseAvailable) {
       try {
+        console.log('Attempting signup for:', email);
         const { data: signUpData, error: signUpError } = await window.supabase.auth.signUp({ email, password });
+        console.log('Signup response:', { data: signUpData, error: signUpError });
+        console.log('User created:', signUpData?.user?.id);
+        console.log('Session:', signUpData?.session);
+        
         if (signUpError) {
+          console.error('Signup error:', signUpError);
           showGeneralMessage(signUpError.message);
           return;
         }
 
-        // Create minimal profile row
+        // Create profile row with language preference
+        console.log('Creating profile for:', email);
+        const currentLang = typeof getLanguage === 'function' ? getLanguage() : 'pt';
         const { data: profileData, error: profileError } = await window.supabase
           .from('profiles')
-          .insert([{ email, full_name: '' }])
+          .insert([{ email, full_name: '', language: currentLang }])
           .select()
           .single();
 
+        console.log('Profile response:', { data: profileData, error: profileError });
+        
         if (profileError) {
-          showGeneralMessage(profileError.message);
+          console.error('Profile error:', profileError);
+          // Check if it's a duplicate key error (email already exists)
+          if (profileError.message && profileError.message.includes('unique constraint')) {
+            showGeneralMessage(getString('login.email_already_registered'));
+          } else {
+            showGeneralMessage(profileError.message || getString('login.signup_error'));
+          }
           return;
         }
 
         showGeneralMessage(getString('login.account_created'));
+        
+        // Clear only the password confirm field
+        document.getElementById('password-confirm').value = '';
+        
+        // Switch back to login form after brief delay
         setTimeout(() => {
           app.isSignupMode = false;
-          toggleSignupMode();
-        }, 1200);
+          
+          // Update UI to show login form
+          const confirmGroup = document.getElementById('confirm-group');
+          const loginBtn = document.getElementById('login-btn');
+          const signupBtn = document.getElementById('signup-btn');
+          const footerFirstUse = document.getElementById('footer-first-use');
+          const footerSignupText = document.getElementById('footer-signup-text');
+          
+          if (confirmGroup) confirmGroup.style.display = 'none';
+          if (loginBtn) loginBtn.textContent = getString('login.login');
+          if (signupBtn) signupBtn.textContent = getString('login.signup');
+          if (footerFirstUse) footerFirstUse.textContent = getString('login.first_login');
+          if (footerSignupText) footerSignupText.textContent = getString('login.signup');
+          clearAllErrors();
+        }, 1500);
         return;
       } catch (err) {
+        console.error('Signup exception:', err);
         showGeneralMessage(err.message || getString('login.signup_error'));
         return;
       }
     }
 
     // Fallback: localStorage signup
-    if (app.users[email]) {
+    if (app.users && app.users[email]) {
       showFieldError('email', getString('login.email_already_registered'));
       return;
     }
 
+    // Ensure app.users exists before setting
+    if (!app.users) {
+      app.users = {};
+    }
     app.users[email] = `${email}:${password}`;
     localStorage.setItem('users', JSON.stringify(app.users));
     showGeneralMessage(getString('login.account_created'));
@@ -199,16 +372,41 @@ async function handleLogin(e) {
     // Handle login
     if (supabaseAvailable) {
       try {
+        console.log('Attempting login for:', email);
+        
+        // First check if email exists in profiles table
+        const { data: profileExists, error: profileCheckError } = await window.supabase
+          .from('profiles')
+          .select('email')
+          .eq('email', email)
+          .single();
+        
+        if (!profileExists) {
+          console.log('Email not found in database');
+          showGeneralMessage(getString('login.email_not_found'));
+          return;
+        }
+        
+        // Email exists, now try to authenticate with password
         const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
+        console.log('Login response:', { data, error });
+        
         if (error) {
-          showGeneralMessage(error.message || getString('login.invalid_credentials'));
+          console.error('Login error:', error);
+          // Check for specific error types
+          if (error.message && error.message.includes('Email not confirmed')) {
+            showGeneralMessage(getString('login.email_not_confirmed'));
+          } else {
+            // Invalid credentials means wrong password (since we already verified email exists)
+            showGeneralMessage(getString('login.wrong_password'));
+          }
           return;
         }
 
         if (rememberMe) {
-          localStorage.setItem('rememberedUser', `${email}:${password}`);
+          localStorage.setItem('rememberedEmail', email);
         } else {
-          localStorage.removeItem('rememberedUser');
+          localStorage.removeItem('rememberedEmail');
         }
 
         loadView('home');
@@ -217,18 +415,9 @@ async function handleLogin(e) {
         showGeneralMessage(err.message || getString('login.login_failed'));
         return;
       }
-    }
-
-    // Fallback: localStorage login
-    if (app.users[email] === `${email}:${password}`) {
-      if (rememberMe) {
-        localStorage.setItem('rememberedUser', `${email}:${password}`);
-      } else {
-        localStorage.removeItem('rememberedUser');
-      }
-      loadView('home');
     } else {
-      showGeneralMessage(getString('login.invalid_credentials'));
+      // If Supabase is not available, show error
+      showGeneralMessage(getString('login.login_failed'));
     }
   }
 }
