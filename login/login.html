@@ -1,16 +1,26 @@
 <!-- login.html now contains only the body markup and scripts for partial loading -->
-<div id="login-page">
+
+<div id="login-container">
   <div class="login-card">
-    <div id="supabase-indicator" class="supabase-indicator offline" title="Supabase connection status">
-      <span class="status-dot"></span>
-      <span id="supabase-text"></span>
+    <h1 id="brand-name" style="margin: 0; padding-top: 18px; float: left;"></h1>
+    <div id="language-switcher" style="float: right; padding-top: 18px; display: flex; align-items: center; gap: 8px;">
+      <select id="lang-select" style="display:none;">
+        <option value="en">English</option>
+        <option value="pt">Português</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+        <option value="it">Italiano</option>
+      </select>
+      <button id="lang-btn" style="background: none; border: none; cursor: pointer; padding: 0;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#DA162A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20"/>
+          <path d="M12 2a15.3 15.3 0 0 1 0 20"/>
+          <path d="M12 2a15.3 15.3 0 0 0 0 20"/>
+        </svg>
+      </button>
     </div>
-
-    <div class="login-brand">
-      <h1 id="brand-name"></h1>
-      <p class="brand-tagline" id="brand-subtitle"></p>
-    </div>
-
+    <p class="brand-tagline" id="brand-subtitle" style="clear: both;"></p>
     <form id="login-form" class="login-form">
       <!-- Email Field -->
       <div class="form-group">
@@ -18,7 +28,6 @@
         <input type="email" id="email" name="email" placeholder="" required />
         <div id="email-error" class="field-error" style="display: none;"></div>
       </div>
-
       <!-- Password Field -->
       <div class="form-group">
         <label for="password" id="password-label"></label>
@@ -33,7 +42,6 @@
         </div>
         <div id="password-error" class="field-error" style="display: none;"></div>
       </div>
-
       <!-- Confirm Password Field (Signup Only) -->
       <div class="form-group" id="confirm-group" style="display: none;">
         <label id="signup-confirm-label" for="password-confirm"></label>
@@ -48,7 +56,6 @@
         </div>
         <div id="confirm-error" class="field-error" style="display: none;"></div>
       </div>
-
       <!-- Login Options -->
       <div class="login-options">
         <label class="checkbox-label">
@@ -56,16 +63,13 @@
           <span id="remember-text"></span>
         </label>
       </div>
-
       <!-- General Error Message -->
       <div id="general-error" class="error-message" style="display: none;"></div>
-
       <!-- Action Buttons -->
       <div class="login-actions">
         <button type="submit" id="login-btn" class="btn-primary"></button>
       </div>
     </form>
-
     <!-- Footer -->
     <div class="login-footer">
       <p class="footer-text"><span id="footer-first-use"></span> <a id="footer-signup-text" class="signup-link"></a></p>
@@ -73,9 +77,6 @@
     </div>
   </div>
 </div>
-</body>
 <script src="../strings_helper.js"></script>
-<script src="login_error_handling.js" defer></script>
+<script src="login_error_handling.js"></script>
 <script src="load_login.js" defer></script>
-</body>
-</html>

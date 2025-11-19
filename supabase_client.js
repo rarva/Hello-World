@@ -15,12 +15,16 @@
     return;
   }
 
-  // Dynamically create a module script to import Supabase and attach to window.supabase
-  const moduleScript = document.createElement('script');
-  moduleScript.type = 'module';
-  moduleScript.textContent = `
+  // Load Supabase library and initialize client
+  const script = document.createElement('script');
+  script.type = 'module';
+  script.textContent = `
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-    window.supabase = createClient(${JSON.stringify(url)}, ${JSON.stringify(anon)});
+    window.supabase = createClient('${url}', '${anon}');
+    console.log('Supabase client initialized successfully');
+    window.supabaseReady = true;
+    // Dispatch custom event to notify app
+    window.dispatchEvent(new CustomEvent('supabaseReady'));
   `;
-  document.head.appendChild(moduleScript);
+  document.head.appendChild(script);
 })();

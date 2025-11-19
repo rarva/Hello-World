@@ -1,98 +1,296 @@
 {
-  "en": {
-    "toolbar": {
-      "home": "Home",
-      "about": "About",
-      "contact": "Contact",
-      "tools": "Tools"
-    },
-    "footer": {
-      "copyright": "All rights reserved"
-    },
-    "app": {
-      "welcome": "Welcome to the app",
-      "loading": "Loading...",
-      "home_title": "Welcome to the app shell!"
-    },
-    "login": {
-      "login": "Log In",
-      "signup": "Sign Up",
-      "back_to_login": "Back to Log In",
-      "email": "Email",
-      "password": "Password",
-      "confirm_password": "Confirm Password",
-      "remember_me": "Remember me",
-      "forgot_password": "Forgot password?",
-      "first_login": "First login?",
-      "show_hide_password": "Show/hide password",
-      "supabase_connected": "Supabase: Connected",
-      "supabase_offline": "Supabase: Offline",
-      "email_required": "Email is required",
-      "password_required": "Password is required",
-      "invalid_email": "Please enter a valid email address",
-      "passwords_dont_match": "Passwords do not match",
-      "email_already_registered": "Email already registered",
-      "account_created": "Account created! Please sign in.",
-      "invalid_credentials": "Invalid email or password",
-      "login_failed": "Login failed",
-      "signup_failed": "Signup failed",
-      "signup_error": "Signup failed",
-      "brand_name": "Rhomberg",
-      "brand_subtitle": "OrgChart Admin",
-      "email_placeholder": "you@example.com",
-      "password_placeholder": "••••••••",
-      "remember_text": "Don't have an account?",
-      "privacy_policy": "Privacy Policy",
-      "toolbar_loading": "Loading toolbar...",
-      "toolbar_error": "Toolbar failed to load."
-    }
+  "toolbar.home": { 
+    "en": "Home", 
+    "pt": "Início", 
+    "de": "Startseite", 
+    "fr": "Accueil", 
+    "it": "Home" 
   },
-  "pt": {
-    "toolbar": {
-      "home": "Início",
-      "about": "Sobre",
-      "contact": "Contacto",
-      "tools": "Ferramentas"
-    },
-    "footer": {
-      "copyright": "Todos os direitos reservados"
-    },
-    "app": {
-      "welcome": "Bem-vindo à aplicação",
-      "loading": "A carregar...",
-      "home_title": "Bem-vindo ao shell da aplicação!"
-    },
-    "login": {
-      "login": "Entrar",
-      "signup": "Registrar",
-      "back_to_login": "Voltar para Entrar",
-      "email": "Email",
-      "password": "Senha",
-      "confirm_password": "Confirmar Senha",
-      "remember_me": "Lembrar-me",
-      "forgot_password": "Esqueceu a password?",
-      "first_login": "Primeiro acesso?",
-      "show_hide_password": "Mostrar/ocultar senha",
-      "supabase_connected": "Supabase: Conectado",
-      "supabase_offline": "Supabase: Offline",
-      "email_required": "Email é obrigatório",
-      "password_required": "Senha é obrigatória",
-      "invalid_email": "Por favor, insira um endereço de email válido",
-      "passwords_dont_match": "Senhas não correspondem",
-      "email_already_registered": "Email já registrado",
-      "account_created": "Conta criada! Por favor, faça login.",
-      "invalid_credentials": "Email ou senha inválidos",
-      "login_failed": "Falha no login",
-      "signup_failed": "Falha no registro",
-      "signup_error": "Falha no registro",
-      "brand_name": "Rhomberg",
-      "brand_subtitle": "OrgChart Admin",
-      "email_placeholder": "voce@example.com",
-      "password_placeholder": "••••••••",
-      "remember_text": "Não tem conta?",
-      "privacy_policy": "Política de Privacidade",
-      "toolbar_loading": "A carregar toolbar...",
-      "toolbar_error": "Falha ao carregar toolbar."
-    }
+  "toolbar.about": { 
+    "en": "About", 
+    "pt": "Sobre", 
+    "de": "Über", 
+    "fr": "À propos", 
+    "it": "Informazioni" 
+  },
+  "toolbar.contact": { 
+    "en": "Contact", 
+    "pt": "Contacto", 
+    "de": "Kontakt", 
+    "fr": "Contact", 
+    "it": "Contatto" 
+  },
+  "toolbar.tools": { 
+    "en": "Tools", 
+    "pt": "Ferramentas", 
+    "de": "Werkzeuge", 
+    "fr": "Outils", 
+    "it": "Strumenti" 
+  },
+  "footer.copyright": { 
+    "en": "All rights reserved", 
+    "pt": "Todos os direitos reservados", 
+    "de": "Alle Rechte vorbehalten", 
+    "fr": "Tous droits réservés", 
+    "it": "Tutti i diritti riservati" 
+  },
+  "app.welcome": { 
+    "en": "Welcome to the app", 
+    "pt": "Bem-vindo à aplicação", 
+    "de": "Willkommen in der App", 
+    "fr": "Bienvenue dans l'application", 
+    "it": "Benvenuto nell'app" 
+  },
+  "app.loading": { 
+    "en": "Loading...", 
+    "pt": "A carregar...", 
+    "de": "Laden...", 
+    "fr": "Chargement...", 
+    "it": "Caricamento..." 
+  },
+  "app.home_title": { 
+    "en": "Welcome to the app shell!", 
+    "pt": "Bem-vindo ao shell da aplicação!", 
+    "de": "Willkommen im App-Shell!", 
+    "fr": "Bienvenue dans le shell de l'application!", 
+    "it": "Benvenuto nel shell dell'app!" 
+  },
+  "login.login": { 
+    "en": "LOG IN", 
+    "pt": "ENTRAR", 
+    "de": "ANMELDEN", 
+    "fr": "CONNEXION", 
+    "it": "ACCEDI" 
+  },
+  "login.signup": { 
+    "en": "SIGN UP", 
+    "pt": "REGISTAR", 
+    "de": "REGISTRIEREN", 
+    "fr": "INSCRIPTION", 
+    "it": "REGISTRATI" 
+  },
+  "login.back_to_login": { 
+    "en": "Back to Log In", 
+    "pt": "Voltar para Entrar", 
+    "de": "Zurück zum Login", 
+    "fr": "Retour à la connexion", 
+    "it": "Torna al login" 
+  },
+  "login.email": { 
+    "en": "Email", 
+    "pt": "Email", 
+    "de": "E-Mail", 
+    "fr": "E-mail", 
+    "it": "Email" 
+  },
+  "login.password": { 
+    "en": "Password", 
+    "pt": "Senha", 
+    "de": "Passwort", 
+    "fr": "Mot de passe", 
+    "it": "Password" 
+  },
+  "login.confirm_password": { 
+    "en": "Confirm Password", 
+    "pt": "Confirmar Senha", 
+    "de": "Passwort bestätigen", 
+    "fr": "Confirmer le mot de passe", 
+    "it": "Conferma password" 
+  },
+  "login.remember_me": { 
+    "en": "Remember me", 
+    "pt": "Lembrar-me", 
+    "de": "Angemeldet bleiben", 
+    "fr": "Se souvenir de moi", 
+    "it": "Ricordami" 
+  },
+  "login.forgot_password": { 
+    "en": "Forgot password?", 
+    "pt": "Esqueceu a password?", 
+    "de": "Passwort vergessen?", 
+    "fr": "Mot de passe oublié?", 
+    "it": "Password dimenticata?" 
+  },
+  "login.first_login": { 
+    "en": "First login?", 
+    "pt": "Primeiro acesso?", 
+    "de": "Erste Anmeldung?", 
+    "fr": "Première connexion?", 
+    "it": "Primo accesso?" 
+  },
+  "login.already_registered": { 
+    "en": "Already have an account?", 
+    "pt": "Já tem uma conta?", 
+    "de": "Haben Sie bereits ein Konto?", 
+    "fr": "Vous avez déjà un compte?", 
+    "it": "Hai già un account?" 
+  },
+  "login.show_hide_password": { 
+    "en": "Show/hide password", 
+    "pt": "Mostrar/ocultar senha", 
+    "de": "Passwort anzeigen/verbergen", 
+    "fr": "Afficher/masquer le mot de passe", 
+    "it": "Mostra/nascondi password" 
+  },
+  "login.supabase_connected": { 
+    "en": "Supabase: Connected", 
+    "pt": "Supabase: Conectado", 
+    "de": "Supabase: Verbunden", 
+    "fr": "Supabase : Connecté", 
+    "it": "Supabase: Connesso" 
+  },
+  "login.supabase_offline": { 
+    "en": "Supabase: Offline", 
+    "pt": "Supabase: Offline", 
+    "de": "Supabase: Offline", 
+    "fr": "Supabase : Hors ligne", 
+    "it": "Supabase: Offline" 
+  },
+  "login.email_required": { 
+    "en": "Email is required", 
+    "pt": "Email é obrigatório", 
+    "de": "E-Mail ist erforderlich", 
+    "fr": "L'e-mail est requise", 
+    "it": "Email richiesta" 
+  },
+  "login.password_required": { 
+    "en": "Password is required", 
+    "pt": "Senha é obrigatória", 
+    "de": "Passwort ist erforderlich", 
+    "fr": "Le mot de passe est requis", 
+    "it": "Password richiesta" 
+  },
+  "login.invalid_email": { 
+    "en": "Please enter a valid email address", 
+    "pt": "Por favor, insira um endereço de email válido", 
+    "de": "Bitte geben Sie eine gültige E-Mail-Adresse ein", 
+    "fr": "Veuillez entrer une adresse e-mail valide", 
+    "it": "Inserisci un indirizzo email valido" 
+  },
+  "login.passwords_dont_match": { 
+    "en": "Passwords do not match", 
+    "pt": "Senhas não correspondem", 
+    "de": "Passwörter stimmen nicht überein", 
+    "fr": "Les mots de passe ne correspondent pas", 
+    "it": "Le password non corrispondono" 
+  },
+  "login.email_already_registered": { 
+    "en": "Email already registered", 
+    "pt": "Email já registrado", 
+    "de": "E-Mail bereits registriert", 
+    "fr": "E-mail déjà enregistrée", 
+    "it": "Email già registrata" 
+  },
+  "login.account_created": { 
+    "en": "Account created! Please sign in.", 
+    "pt": "Conta criada! Por favor, faça login.", 
+    "de": "Konto erstellt! Bitte melden Sie sich an.", 
+    "fr": "Compte créé ! Veuillez vous connecter.", 
+    "it": "Account creato! Effettua l'accesso." 
+  },
+  "login.email_not_confirmed": { 
+    "en": "Please confirm your email before logging in", 
+    "pt": "Por favor, confirme seu email antes de fazer login", 
+    "de": "Bitte bestätigen Sie Ihre E-Mail vor dem Anmelden", 
+    "fr": "Veuillez confirmer votre e-mail avant de vous connecter", 
+    "it": "Conferma il tuo email prima di accedere" 
+  },
+  "login.invalid_credentials": { 
+    "en": "Invalid email or password", 
+    "pt": "Email ou senha inválidos", 
+    "de": "Ungültige E-Mail oder Passwort", 
+    "fr": "E-mail ou mot de passe invalide", 
+    "it": "Email o password non validi" 
+  },
+  "login.login_failed": { 
+    "en": "Login failed", 
+    "pt": "Falha no login", 
+    "de": "Anmeldung fehlgeschlagen", 
+    "fr": "Échec de la connexion", 
+    "it": "Accesso fallito" 
+  },
+  "login.signup_failed": { 
+    "en": "Signup failed", 
+    "pt": "Falha no registro", 
+    "de": "Registrierung fehlgeschlagen", 
+    "fr": "Échec de l'inscription", 
+    "it": "Registrazione fallita" 
+  },
+  "login.signup_error": { 
+    "en": "Signup failed", 
+    "pt": "Falha no registro", 
+    "de": "Registrierung fehlgeschlagen", 
+    "fr": "Échec de l'inscription", 
+    "it": "Registrazione fallita" 
+  },
+  "login.brand_name": { 
+    "en": "Rhomberg", 
+    "pt": "Rhomberg", 
+    "de": "Rhomberg", 
+    "fr": "Rhomberg", 
+    "it": "Rhomberg" 
+  },
+  "login.brand_subtitle": { 
+    "en": "OrgChart Admin", 
+    "pt": "OrgChart Admin", 
+    "de": "OrgChart Admin", 
+    "fr": "OrgChart Admin", 
+    "it": "OrgChart Admin" 
+  },
+  "login.email_placeholder": { 
+    "en": "you@example.com", 
+    "pt": "voce@example.com", 
+    "de": "sie@example.com", 
+    "fr": "vous@example.com", 
+    "it": "tu@example.com" 
+  },
+  "login.password_placeholder": { 
+    "en": "••••••••", 
+    "pt": "••••••••", 
+    "de": "••••••••", 
+    "fr": "••••••••", 
+    "it": "••••••••" 
+  },
+  "login.remember_text": { 
+    "en": "Don't have an account?", 
+    "pt": "Não tem conta?", 
+    "de": "Kein Konto?", 
+    "fr": "Pas de compte?", 
+    "it": "Non hai un account?" 
+  },
+  "login.privacy_policy": { 
+    "en": "Privacy Policy", 
+    "pt": "Política de Privacidade", 
+    "de": "Datenschutzrichtlinie", 
+    "fr": "Politique de confidentialité", 
+    "it": "Informativa sulla privacy" 
+  },
+  "login.toolbar_loading": { 
+    "en": "Loading toolbar...", 
+    "pt": "A carregar toolbar...", 
+    "de": "Toolbar wird geladen...", 
+    "fr": "Chargement de la barre d'outils...", 
+    "it": "Caricamento della toolbar..." 
+  },
+  "login.toolbar_error": { 
+    "en": "Toolbar failed to load.", 
+    "pt": "Falha ao carregar toolbar.", 
+    "de": "Toolbar konnte nicht geladen werden.", 
+    "fr": "Échec du chargement de la barre d'outils.", 
+    "it": "Impossibile caricare la toolbar." 
+  },
+  "login.email_not_found": { 
+    "en": "Email not found", 
+    "pt": "Email não encontrado", 
+    "de": "E-Mail nicht gefunden", 
+    "fr": "Email non trouvé", 
+    "it": "Email non trovata" 
+  },
+  "login.wrong_password": { 
+    "en": "Wrong password", 
+    "pt": "Senha errada", 
+    "de": "Falsches Passwort", 
+    "fr": "Mot de passe incorrect", 
+    "it": "Password errata" 
   }
 }

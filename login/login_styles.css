@@ -1,70 +1,50 @@
-/* ===== Login Page Container ===== */
-.login-page {
-  position: fixed;
-  inset: 0;
+/* ===== Language Combobox ===== */
+#lang-select {
+  margin-right: 8px;
+  font-size: var(--font-size-regular);
+  color: var(--color-primary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  z-index: 10001;
+}
+
+/* ===== Language Switcher Button/Icon ===== */
+#lang-switcher {
+  cursor: pointer;
+  color: var(--color-primary);
+  transition: color 200ms ease, transform 200ms ease;
+}
+#lang-switcher:hover {
+    opacity: 0.7;
+}
+/* ===== Login Container ===== */
+#login-container {
+  flex: 1;
+  width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
   z-index: 10000;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  padding: 20px 0;
 }
 
 /* ===== Login Card ===== */
 .login-card {
   width: 400px;
-  padding: 40px;
+  padding: 20px;
   border-radius: var(--radius);
   border: var(--border-width) solid var(--color-primary);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -65%);
-}
-
-/* ===== Supabase Status Indicator ===== */
-.supabase-indicator {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: var(--radius);
-  border: var(--border-width) solid var(--color-border-light);
-  font-size: var(--font-size-regular);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--color-text-dark);
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius);
-  background: currentColor;
-}
-
-.supabase-indicator.online {
-  color: var(--color-success);
-  border-color: var(--color-success);
-}
-
-.supabase-indicator.offline {
-  color: var(--color-error);
-  border-color: var(--color-error);
+  flex-shrink: 0;
 }
 
 /* ===== Brand Section ===== */
-.login-brand {
-  text-align: left;
-  margin-bottom: 32px;
-  padding-top: 8px;
-}
+#brand-name {
 
-.login-brand h1 {
-  margin: 0 0 4px;
   font-size: 28px;
   font-weight: 700;
   color: var(--color-primary);
@@ -72,7 +52,7 @@
 }
 
 .brand-tagline {
-  margin: 0;
+  margin: 20px 0px;
   font-size: 13px;
   color: var(--color-primary);
   font-weight: 500;
@@ -199,15 +179,11 @@
 }
 
 .error-message {
-  background: var(--color-bg);
   color: var(--color-error);
-  padding: 12px 14px;
-  border-radius: var(--radius);
   font-size: var(--font-size-regular);
-  border-left: 53px solid var(--color-error);
   display: flex;
   align-items: center;
-  gap: 8px;
+  
 }
 
 .login-form input.error {
@@ -219,7 +195,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 8px 0 0 0;
+  
   font-size: var(--font-size-regular);
   gap: 12px;
 }
@@ -230,7 +206,7 @@
   font-size: var(--font-size-regular);
   font-weight: 400;
   color: var(--color-text-dark);
-  margin: 0;
+
   gap: 6px;
   cursor: pointer;
   user-select: none;
