@@ -1,7 +1,7 @@
 // ===============================
-// Strings Helper Module
+// Language Manager Module
 // ===============================
-// This module handles loading and retrieving strings from strings.json
+// This module handles loading and retrieving strings from strings.json for i18n support
 
 let stringsData = null;
 let currentLanguage = null;
@@ -54,11 +54,11 @@ function detectBrowserLanguage() {
 }
 
 /**
- * Load strings from strings.json
+ * Load strings from language_strings.json
  */
 async function loadStrings() {
   try {
-    const response = await fetch('strings.json');
+    const response = await fetch('language_strings.json');
     stringsData = await response.json();
     
     // Initialize language on first load

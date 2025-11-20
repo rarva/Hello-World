@@ -10,7 +10,7 @@
   z-index: 10001;
 }
 
-/* ===== Language Switcher Button/Icon ===== */
+/* ===== Language Switcher Button ===== */
 #lang-btn {
   cursor: pointer;
   outline: none !important;
@@ -18,32 +18,23 @@
   border: none !important;
   transition: opacity 200ms ease;
 }
+
 #lang-btn:focus,
 #lang-btn:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
+
 #lang-btn:hover {
   opacity: 0.7;
 }
+
 #lang-btn svg {
   outline: none !important;
 }
-/* ===== Login Container ===== */
-#login-container {
-  flex: 1;
-  width: 100%;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  overflow-y: auto;
-  overflow-x: hidden;
-  z-index: 10000;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  padding: 20px 0;
-}
 
-/* Login wrapper provides proper layout context - same as container */
+/* ===== Login Container ===== */
+#login-container,
 .login-wrapper {
   flex: 1;
   width: 100%;
@@ -75,7 +66,7 @@
 }
 
 .brand-tagline {
-  margin: 20px 0px;
+  margin: 20px 0;
   font-size: 13px;
   color: var(--color-primary);
   font-weight: 500;
@@ -105,9 +96,11 @@
   margin: 0;
 }
 
-/* ===== Form Inputs ===== */
+/* ===== Form Inputs (Shared Base) ===== */
 .login-form input[type="email"],
-.login-form input[type="password"] {
+.login-form input[type="password"],
+.password-wrapper input[type="password"],
+.password-wrapper input[type="text"] {
   height: 44px;
   padding: 10px 14px;
   border-radius: var(--radius);
@@ -117,20 +110,38 @@
   outline: none;
 }
 
+/* ===== Autofill Styling (Consolidated) ===== */
 .login-form input[type="email"]:-webkit-autofill,
-.login-form input[type="password"]:-webkit-autofill {
+.login-form input[type="password"]:-webkit-autofill,
+.password-wrapper input[type="password"]:-webkit-autofill,
+.password-wrapper input[type="text"]:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px var(--color-bg) inset !important;
   -webkit-text-fill-color: var(--color-text-dark) !important;
 }
 
+/* ===== Focus States (Consolidated) ===== */
 .login-form input[type="email"]:focus,
-.login-form input[type="password"]:focus {
+.login-form input[type="password"]:focus,
+.password-wrapper input[type="password"]:focus,
+.password-wrapper input[type="text"]:focus {
   border-color: var(--color-primary);
   background: var(--color-text-light);
 }
 
-.login-form input::placeholder {
+/* ===== Placeholder Styling ===== */
+.login-form input::placeholder,
+.password-wrapper input::placeholder {
   color: var(--color-text-dark);
+}
+
+.password-wrapper input::placeholder {
+  opacity: 0.5;
+}
+
+/* ===== Email/Password Inputs ===== */
+.login-form input[type="email"],
+.login-form input[type="password"] {
+  width: 100%;
 }
 
 /* ===== Password Wrapper ===== */
@@ -143,40 +154,16 @@
 
 .password-wrapper input[type="password"],
 .password-wrapper input[type="text"] {
-  height: 44px;
-  padding: 10px 14px;
-  padding-right: 42px;
   width: 100%;
-  border-radius: var(--radius);
-  border: var(--border-width) solid var(--color-border-dark);
+  padding-right: 42px;
   font-size: var(--font-size-regular);
-  background: var(--color-bg);
-  outline: none;
 }
 
 .password-wrapper input[type="password"] {
   font-size: 30px;
 }
 
-.password-wrapper input[type="password"]:-webkit-autofill,
-.password-wrapper input[type="text"]:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px var(--color-bg) inset !important;
-  -webkit-text-fill-color: var(--color-text-dark) !important;
-}
-
-.password-wrapper input[type="password"]:focus,
-.password-wrapper input[type="text"]:focus {
-  border-color: var(--color-primary);
-  background: var(--color-text-light);
-}
-
-/* Placeholder styling: opacity 0.5 */
-.password-wrapper input::placeholder {
-  opacity: 0.5;
-  color: var(--color-text-dark);
-}
-
-/* User input: opacity 1 */
+/* User input opacity override */
 .password-wrapper input:-webkit-autofill,
 .password-wrapper input:not(:placeholder-shown) {
   opacity: 1;
@@ -198,7 +185,6 @@
   outline: none;
 }
 
-/* Eye icon opacity: hidden password = 0.5, showing password = 1 */
 .eye-btn[data-state="hidden"] .eye-icon {
   opacity: 0.5;
 }
@@ -215,13 +201,7 @@
 }
 
 /* ===== Error Messages ===== */
-.field-error {
-  color: var(--color-error);
-  font-size: var(--font-size-regular);
-  display: flex;
-  align-items: center;
-}
-
+.field-error,
 .error-message {
   color: var(--color-error);
   font-size: var(--font-size-regular);
@@ -265,8 +245,11 @@
   color: var(--color-text-dark);
 }
 
-/* ===== Link Button ===== */
-.link-btn {
+/* ===== Link Buttons (Shared) ===== */
+.link-btn,
+.forgot-password-btn,
+.footer-link,
+.signup-link {
   background: none;
   border: none;
   color: var(--color-primary);
@@ -276,9 +259,14 @@
   padding: 0;
   font-weight: 600;
   transition: opacity 200ms ease;
+  outline: none;
 }
 
-.link-btn:hover {
+.link-btn:hover,
+.forgot-password-btn:hover,
+.footer-link:hover,
+.signup-link:hover,
+.signup-link:focus {
   opacity: 0.7;
   text-decoration: underline;
 }
@@ -286,11 +274,6 @@
 .forgot-password-btn {
   color: var(--color-text-dark);
   font-weight: 400;
-}
-
-.forgot-password-btn:hover {
-  opacity: 0.7;
-  text-decoration: underline;
 }
 
 /* ===== Action Buttons ===== */
@@ -361,35 +344,6 @@
   font-size: var(--font-size-regular);
   color: var(--color-text-dark);
   line-height: 1.5;
-}
-
-.footer-link {
-  color: var(--color-primary);
-  text-decoration: none;
-  font-size: var(--font-size-regular);
-  font-weight: 600;
-  transition: opacity 200ms ease;
-}
-
-.footer-link:hover {
-  opacity: 0.7;
-  text-decoration: underline;
-}
-
-.signup-link {
-  color: var(--color-primary);
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: none;
-  transition: opacity 200ms ease;
-  outline: none;
-}
-
-.signup-link:hover,
-.signup-link:focus {
-  opacity: 0.7;
-  text-decoration: underline;
-  outline: none;
 }
 
 /* ===== Responsive Design ===== */

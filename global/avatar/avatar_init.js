@@ -146,14 +146,6 @@ function setupAvatarUpload(placeholderId, fileInputId) {
   });
 }
 
-function getAvatarDataUrl(placeholderId) {
-  const avatarPreview = document.getElementById('avatar-preview');
-  if (avatarPreview && avatarPreview.src) {
-    return avatarPreview.src;
-  }
-  return null;
-}
-
 /**
  * Generate initials from first and last name
  * Returns initials like "JD" for John Doe
