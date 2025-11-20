@@ -7,7 +7,7 @@
  * Initialize home container: load HTML and styles
  */
 function initHomeContainer() {
-  fetch('home/home.html')
+  fetch('containers/home/home.html')
     .then(res => res.text())
     .then(html => {
       const homeContainer = document.getElementById('home-container');
@@ -16,7 +16,7 @@ function initHomeContainer() {
       // Load home styles
       const style = document.createElement('link');
       style.rel = 'stylesheet';
-      style.href = 'home/home_styles.css';
+      style.href = 'containers/home/home_styles.css';
       document.head.appendChild(style);
       
       // Initialize home after HTML is present
@@ -38,7 +38,7 @@ function loadHomeView(viewName) {
     return;
   }
   
-  fetch(`home/${viewName}.html`)
+  fetch(`containers/home/${viewName}.html`)
     .then(res => res.text())
     .then(html => {
       homeContainer.innerHTML = html;

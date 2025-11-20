@@ -3,18 +3,18 @@
  * Error handling for onboarding module
  */
 
-function showOnboardingError(message) {
+window.showOnboardingError = function(message) {
   const errorEl = document.getElementById('onboarding-error');
   if (errorEl) {
     errorEl.textContent = message;
     errorEl.style.display = 'block';
   }
-}
+};
 
-function clearOnboardingError() {
+window.clearOnboardingError = function() {
   const errorEl = document.getElementById('onboarding-error');
   if (errorEl) {
     errorEl.style.display = 'none';
     errorEl.textContent = '';
   }
-}
+};

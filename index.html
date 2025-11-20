@@ -7,19 +7,21 @@
   <!-- Favicon - Rhomberg company colors (red, orange, black bars) -->
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
   <!-- Main stylesheet -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="global/global_styles.css" />
   <!-- Avatar stylesheet -->
-  <link rel="stylesheet" href="avatar/avatar_styles.css" />
+  <link rel="stylesheet" href="global/avatar/avatar_styles.css" />
   <!-- Login form stylesheet -->
-  <link rel="stylesheet" href="login/login_styles.css" />
+  <link rel="stylesheet" href="containers/login/login_styles.css" />
   <!-- Home stylesheet -->
-  <link rel="stylesheet" href="home/home_styles.css" />
-  <!-- Strings helper for i18n -->
-  <script src="strings_helper.js"></script>
+  <link rel="stylesheet" href="containers/home/home_styles.css" />
+  <!-- Language manager for i18n -->
+  <script src="global/language_manager.js"></script>
+  <!-- Global functions and utilities -->
+  <script src="global/global_functions.js"></script>
   <!-- Supabase configuration (load first) -->
   <script src="config.js"></script>
-  <!-- Supabase client initialization -->
-  <script src="supabase_client.js"></script>
+  <!-- Database client initialization -->
+  <script src="database_init.js"></script>
 </head>
 <body>
   <!-- Main view container -->
@@ -36,19 +38,19 @@
     <div id="footer-container"></div>
   </div>
   <!-- Module loading (all init files follow same pattern) -->
-  <script src="avatar/avatar_init.js"></script>
-  <script src="login/login_init.js"></script>
-  <script src="login/login_auth.js"></script>
-  <script src="onboarding/onboarding_init.js"></script>
-  <script src="toolbar/toolbar_init.js"></script>
-  <script src="home/home_init.js"></script>
-  <script src="footer/footer_init.js"></script>
+  <script src="global/avatar/avatar_init.js"></script>
+  <script src="containers/login/login_init.js"></script>
+  <script src="containers/login/login_auth.js"></script>
+  <script src="containers/onboarding/onboarding_init.js"></script>
+  <script src="containers/toolbar/toolbar_init.js"></script>
+  <script src="containers/home/home_init.js"></script>
+  <script src="containers/footer/footer_init.js"></script>
   <!-- Error handling modules -->
-  <script src="login/login_errors.js"></script>
-  <script src="onboarding/onboarding_errors.js"></script>
-  <script src="toolbar/toolbar_errors.js"></script>
-  <script src="home/home_errors.js"></script>
-  <script src="footer/footer_errors.js"></script>
+  <script src="containers/login/login_errors.js"></script>
+  <script src="containers/onboarding/onboarding_errors.js"></script>
+  <script src="containers/toolbar/toolbar_errors.js"></script>
+  <script src="containers/home/home_errors.js"></script>
+  <script src="containers/footer/footer_errors.js"></script>
   <!-- Main app orchestration -->
   <script src="main.js"></script>
 </body>

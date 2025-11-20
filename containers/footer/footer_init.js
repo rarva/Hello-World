@@ -7,7 +7,7 @@
  * Initialize footer container: load HTML and styles
  */
 function initFooterContainer() {
-  fetch('footer/footer.html')
+  fetch('containers/footer/footer.html')
     .then(res => res.text())
     .then(html => {
       const footerContainer = document.getElementById('footer-container');
@@ -16,7 +16,7 @@ function initFooterContainer() {
       // Load footer styles
       const style = document.createElement('link');
       style.rel = 'stylesheet';
-      style.href = 'footer/footer_styles.css';
+      style.href = 'containers/footer/footer_styles.css';
       document.head.appendChild(style);
       
       // Initialize footer after HTML is present

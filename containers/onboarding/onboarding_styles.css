@@ -1,10 +1,7 @@
 /* ===== Onboarding Overlay ===== */
 .onboarding-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 1000;
 }
@@ -33,7 +30,7 @@
   animation: slideIn 300ms ease-out;
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling - consolidated */
 .onboarding-modal::-webkit-scrollbar {
   width: 8px;
 }
@@ -72,7 +69,7 @@
 
 /* ===== Onboarding Header ===== */
 .onboarding-header {
-  margin: 20px 0 24px 0;
+  margin: 20px 0 24px;
   color: var(--color-primary);
   font-size: 24px;
   font-weight: 600;
@@ -110,6 +107,24 @@
   color: var(--color-black);
 }
 
+.form-group input {
+  height: 44px;
+  padding: 10px 14px;
+  font-size: var(--font-size-regular);
+  border: var(--border-width) solid var(--color-border-dark);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text-dark);
+  transition: all 200ms ease;
+  font-family: inherit;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: var(--color-primary);
+  background: white;
+}
+
 /* ===== Label with Icon ===== */
 .label-with-icon {
   display: flex;
@@ -119,32 +134,30 @@
   position: relative;
 }
 
+/* ===== Info Icon Shared Styles ===== */
 .info-icon {
   width: 18px;
   height: 18px;
   color: #999;
   cursor: help;
   flex-shrink: 0;
-  position: relative;
+  transition: color 200ms ease;
 }
 
 .info-icon:hover {
   color: var(--color-primary);
 }
 
+/* ===== Tooltip Shared Styles ===== */
 .info-tooltip {
   display: none;
   position: absolute;
-  bottom: 130%;
-  right: -50px;
-  width: 280px;
   background: var(--color-primary);
   color: white;
   padding: 10px 12px;
   border-radius: 4px;
   font-size: 12px;
   line-height: 1.4;
-  white-space: normal;
   z-index: 1002;
   pointer-events: auto;
 }
@@ -152,8 +165,6 @@
 .info-tooltip::after {
   content: '';
   position: absolute;
-  top: 100%;
-  right: 60px;
   width: 0;
   height: 0;
   border-left: 6px solid transparent;
@@ -161,8 +172,25 @@
   border-top: 6px solid var(--color-primary);
 }
 
-.info-icon:hover ~ .info-tooltip,
-.info-tooltip:hover {
+/* Label tooltip positioning */
+.label-with-icon .info-icon {
+  position: relative;
+}
+
+.label-with-icon .info-tooltip {
+  bottom: 130%;
+  right: -50px;
+  width: 280px;
+  white-space: normal;
+}
+
+.label-with-icon .info-tooltip::after {
+  top: 100%;
+  right: 60px;
+}
+
+.label-with-icon .info-icon:hover ~ .info-tooltip,
+.label-with-icon .info-tooltip:hover {
   display: block;
 }
 
@@ -180,54 +208,20 @@
 .input-with-icon .info-icon {
   position: absolute;
   right: 12px;
-  width: 18px;
-  height: 18px;
-  color: #999;
-  cursor: help;
-  flex-shrink: 0;
 }
 
-.input-with-icon .info-icon:hover {
-  color: var(--color-primary);
-}
-
+/* Input tooltip positioning */
 .input-with-icon .info-tooltip {
-  display: none;
-  position: absolute;
   bottom: 125%;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--color-primary);
-  color: white;
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 12px;
   white-space: nowrap;
-  z-index: 100;
   pointer-events: none;
 }
 
 .input-with-icon .info-icon:hover ~ .info-tooltip,
 .input-with-icon .info-tooltip:hover {
   display: block;
-}
-
-.form-group input {
-  height: 44px;
-  padding: 10px 14px;
-  font-size: var(--font-size-regular);
-  border: var(--border-width) solid var(--color-border-dark);
-  border-radius: var(--radius);
-  background: var(--color-bg);
-  color: var(--color-text-dark);
-  transition: all 200ms ease;
-  font-family: inherit;
-  outline: none;
-}
-
-.form-group input:focus {
-  border-color: var(--color-primary);
-  background: white;
 }
 
 /* ===== Field Hint ===== */
@@ -257,7 +251,7 @@
   color: var(--color-error);
   font-size: var(--font-size-regular);
   line-height: 1.4;
-  margin: 0 0 16px 0;
+  margin: 0 0 16px;
 }
 
 /* ===== Form Actions ===== */
@@ -295,8 +289,7 @@
 
 /* ===== Info Text ===== */
 .info-text {
-  margin: 0;
-  margin-top: 16px;
+  margin: 16px 0 0;
   font-size: var(--font-size-regular);
   color: var(--color-text-dark);
   font-weight: 400;

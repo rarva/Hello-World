@@ -7,7 +7,7 @@
  * Initialize toolbar container: load HTML and styles
  */
 function initToolbarContainer() {
-  fetch('toolbar/toolbar.html')
+  fetch('containers/toolbar/toolbar.html')
     .then(res => res.text())
     .then(html => {
       const toolbarContainer = document.getElementById('toolbar-container');
@@ -16,7 +16,7 @@ function initToolbarContainer() {
       // Load toolbar styles
       const style = document.createElement('link');
       style.rel = 'stylesheet';
-      style.href = 'toolbar/toolbar_styles.css';
+      style.href = 'containers/toolbar/toolbar_styles.css';
       document.head.appendChild(style);
       
       // Initialize toolbar after HTML is present
