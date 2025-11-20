@@ -1,0 +1,57 @@
+<!-- Onboarding modal for post-signup profile completion -->
+<div class="onboarding-overlay"></div>
+<div class="onboarding-modal">
+  <form id="onboarding-form" class="onboarding-form" novalidate>
+    
+    <!-- Avatar Section (loaded from avatar/avatar.html) -->
+    <div class="avatar-section" id="avatar-section"></div>
+
+    <!-- Header Text -->
+    <h1 id="onboarding-header" class="onboarding-header"></h1>
+
+    <!-- Name Section -->
+    <div class="form-section">
+      
+      <div class="form-group">
+        <label for="first-name" id="first-name-label"></label>
+        <input type="text" id="first-name" name="first-name" required />
+        <div id="first-name-error" class="field-error" style="display: none;"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="last-name" id="last-name-label"></label>
+        <input type="text" id="last-name" name="last-name" required />
+        <div id="last-name-error" class="field-error" style="display: none;"></div>
+      </div>
+    </div>
+
+    <!-- Manager Section -->
+    <div class="form-section">
+      
+      <div class="form-group">
+        <div class="label-with-icon">
+          <label for="reports-to-email" id="reports-to-email-label"></label>
+          <svg class="info-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+            <text x="12" y="16" text-anchor="middle" font-size="14" font-weight="bold" fill="currentColor">i</text>
+          </svg>
+          <span class="info-tooltip" id="reports-to-tooltip"></span>
+        </div>
+        <input type="email" id="reports-to-email" name="reports-to-email" required />
+        <p id="reports-to-hint" class="field-hint"></p>
+        <div id="reports-to-email-error" class="field-error" style="display: none;"></div>
+      </div>
+    </div>
+
+    <!-- General Error -->
+    <div id="onboarding-error" class="general-error" style="display: none;"></div>
+
+    <!-- Submit Button -->
+    <div class="form-actions">
+      <button type="submit" id="onboarding-save-btn" class="btn-primary"></button>
+    </div>
+
+    <!-- Info Text -->
+    <p id="onboarding-info-text" class="info-text"></p>
+  </form>
+</div>

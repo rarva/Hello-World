@@ -56,6 +56,19 @@ html, body {
   display: flex;
 }
 
+#onboarding-container {
+  flex: 1;
+  width: 100%;
+  display: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 75;
+}
+
+#onboarding-container.visible {
+  display: block;
+}
+
 #footer-container {
   width: 100%;
   display: flex;
@@ -74,13 +87,27 @@ html, body {
   --color-bg-transparent: transparent;
   --color-bg: #f5f5f5;             /* Background color */
   --color-border-light: #e0e0e0;   /* Light border */
-  --color-border-dark: #333;    /* Dark border */
+  --color-border-dark: #333;       /* Dark border */
   --color-success: #0a8a4a;        /* Success green */
   --color-error: #d9443f;          /* Error red */
-  --toolbar-height: 100px ; /* change this to resize toolbar; buttons will stay half height */
-  --radius: 10px;                   /* Global border radius */
-  --border-width: 1.5px;              /* Global border thickness */
+  --toolbar-height: 100px;         /* change this to resize toolbar; buttons will stay half height */
+  --radius: 10px;                  /* Global border radius */
+  --border-width: 1.5px;           /* Global border thickness */
   --font-size-regular: 12px;       /* Global regular text size */
+
+  
+  /* Avatar initials color palette (cycling through 12 colors) */
+  --avatar-color-1:  #e53e38;       /* Red */
+  --avatar-color-2: #ff8e1d;       /* Orange */
+  --avatar-color-3: #FFD93D;       /* Yellow */
+  --avatar-color-4:  #9ACD32;       /* Green */
+  --avatar-color-5: #4D96FF;       /* Blue */
+  --avatar-color-6: #7B68EE;       /* Purple */
+  --avatar-color-7: #FF6B9D;       /* Pink */
+  --avatar-color-8: #bb713c;       /* Brown */
+  --avatar-color-9: #00D9FF;       /* Cyan */
+  --avatar-color-10: #379787;      /* Esmerald */
+  
 }
 
 /* Toolbar styles consolidated in toolbar/toolbar_styles.css */

@@ -299,5 +299,125 @@
     "de": "Abmelden", 
     "fr": "Déconnexion", 
     "it": "Esci" 
+  },
+
+  "onboarding.name.title": {
+    "en": "Your Name",
+    "pt": "Seu Nome",
+    "de": "Ihr Name",
+    "fr": "Votre nom",
+    "it": "Il tuo nome"
+  },
+  "onboarding.header": {
+    "en": "Welcome! Let's get started.",
+    "pt": "Bem-vindo! Vamos começar.",
+    "de": "Willkommen! Lassen Sie uns beginnen.",
+    "fr": "Bienvenue! Commençons.",
+    "it": "Benvenuto! Iniziamo."
+  },
+  "onboarding.name.firstName": {
+    "en": "First Name *",
+    "pt": "Primeiro Nome *",
+    "de": "Vorname *",
+    "fr": "Prénom *",
+    "it": "Nome *"
+  },
+  "onboarding.name.lastName": {
+    "en": "Last Name *",
+    "pt": "Sobrenome *",
+    "de": "Nachname *",
+    "fr": "Nom *",
+    "it": "Cognome *"
+  },
+  "onboarding.manager.title": {
+    "en": "Your Manager",
+    "pt": "Seu Gerente",
+    "de": "Ihr Manager",
+    "fr": "Votre manager",
+    "it": "Il tuo manager"
+  },
+  "onboarding.manager.email": {
+    "en": "Reports to *",
+    "pt": "Relata para *",
+    "de": "Berichtet an *",
+    "fr": "Rapporte à *",
+    "it": "Riferisce a *"
+  },
+  "onboarding.manager.hint": {
+    "en": "Enter the email of the person that you report to.",
+    "pt": "Digite o email da pessoa a quem você se reporta.",
+    "de": "Geben Sie die E-Mail der Person ein, an die Sie berichten.",
+    "fr": "Entrez l'email de la personne à qui vous rendez compte.",
+    "it": "Inserisci l'email della persona a cui fai rapporto."
+  },
+  "onboarding.manager.tooltip": {
+    "en": "This will be the person that will be responsible for validating your information.\nIf you don't report to anyone, please type 'admin'.\nYou can have more than one person that you report to; you can add them later in your profile section.",
+    "pt": "Esta será a pessoa responsável por validar suas informações.\nSe você não se reporta a ninguém, digite 'admin'.\nVocê pode ter mais de uma pessoa a quem se reporta; pode adicioná-los mais tarde na seção de perfil.",
+    "de": "Dies wird die Person sein, die für die Validierung Ihrer Informationen verantwortlich ist.\nWenn Sie niemanden melden, geben Sie bitte 'admin' ein.\nSie können mehr als eine Person haben, an die Sie berichten; Sie können diese später in Ihrem Profilbereich hinzufügen.",
+    "fr": "Ce sera la personne responsable de la validation de vos informations.\nSi vous ne rapportez à personne, tapez 'admin'.\nVous pouvez avoir plus d'une personne à qui rendre des comptes ; vous pouvez les ajouter plus tard dans la section de profil.",
+    "it": "Questa sarà la persona responsabile della convalida delle tue informazioni.\nSe non hai una persona a cui fare rapporto, digita 'admin'.\nPuoi avere più di una persona a cui fare rapporto; puoi aggiungerli in seguito nella sezione del profilo."
+  },
+  "onboarding.save": {
+    "en": "Save Profile",
+    "pt": "Salvar Perfil",
+    "de": "Profil speichern",
+    "fr": "Enregistrer le profil",
+    "it": "Salva profilo"
+  },
+  "onboarding.saving": {
+    "en": "Saving...",
+    "pt": "Salvando...",
+    "de": "Wird gespeichert...",
+    "fr": "Enregistrement...",
+    "it": "Salvataggio..."
+  },
+  "onboarding.infoText": {
+    "en": "You can update this information anytime in your profile settings.",
+    "pt": "Você pode atualizar essas informações a qualquer momento nas configurações do seu perfil.",
+    "de": "Sie können diese Informationen jederzeit in Ihren Profileinstellungen aktualisieren.",
+    "fr": "Vous pouvez mettre à jour ces informations à tout moment dans vos paramètres de profil.",
+    "it": "Puoi aggiornare queste informazioni in qualsiasi momento nelle impostazioni del tuo profilo."
+  },
+  "onboarding.avatar.urlLabel": {
+    "en": "Avatar URL",
+    "pt": "URL do Avatar",
+    "de": "Avatar-URL",
+    "fr": "URL de l'avatar",
+    "it": "URL dell'avatar"
+  },
+  "onboarding.avatar.fileButton": {
+    "en": "Choose File",
+    "pt": "Escolher Arquivo",
+    "de": "Datei wählen",
+    "fr": "Choisir un fichier",
+    "it": "Scegli file"
+  },
+  "onboarding.error.firstNameRequired": {
+    "en": "First name is required",
+    "pt": "Primeiro nome é obrigatório",
+    "de": "Vorname ist erforderlich",
+    "fr": "Le prénom est requis",
+    "it": "Il nome è obbligatorio"
+  },
+  "onboarding.error.lastNameRequired": {
+    "en": "Last name is required",
+    "pt": "Sobrenome é obrigatório",
+    "de": "Nachname ist erforderlich",
+    "fr": "Le nom de famille est requis",
+    "it": "Il cognome è obbligatorio"
+  },
+  "onboarding.error.reportsToEmailRequired": {
+    "en": "Manager email is required",
+    "pt": "Email do gerente é obrigatório",
+    "de": "E-Mail des Managers ist erforderlich",
+    "fr": "L'email du manager est requis",
+    "it": "L'email del manager è obbligatorio"
+  },
+  "onboarding.error.invalidEmail": {
+    "en": "Please enter a valid email address",
+    "pt": "Por favor, insira um endereço de email válido",
+    "de": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    "fr": "Veuillez entrer une adresse e-mail valide",
+    "it": "Inserisci un indirizzo email valido"
   }
 }

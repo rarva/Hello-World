@@ -51,12 +51,17 @@ async function handleLogin(e) {
           return;
         }
 
-        // Create profile row with language preference
+        // Create profile row with language preference and user ID
         console.log('Creating profile for:', email);
         const currentLang = typeof getLanguage === 'function' ? getLanguage() : 'pt';
         const { data: profileData, error: profileError } = await window.supabase
           .from('profiles')
-          .insert([{ email, full_name: '', language: currentLang }])
+          .insert([{ 
+            id: signUpData.user.id,
+            email, 
+            full_name: '', 
+            language: currentLang 
+          }])
           .select()
           .single();
 
@@ -75,27 +80,24 @@ async function handleLogin(e) {
 
         showGeneralMessage(getString('login.account_created'));
         
-        // Clear only the password confirm field
-        document.getElementById('password-confirm').value = '';
+        // Hide login form after successful signup
+        const loginContainer = document.getElementById('login-container');
+        if (loginContainer) {
+          loginContainer.style.display = 'none';
+          loginContainer.style.visibility = 'hidden';
+          loginContainer.style.pointerEvents = 'none';
+          loginContainer.style.zIndex = '-9999';
+          loginContainer.innerHTML = '';  // Clear all content
+          console.log('Login container hidden and cleared');
+        }
         
-        // Switch back to login form after brief delay
-        setTimeout(() => {
-          app.isSignupMode = false;
-          
-          // Update UI to show login form
-          const confirmGroup = document.getElementById('confirm-group');
-          const loginBtn = document.getElementById('login-btn');
-          const signupBtn = document.getElementById('signup-btn');
-          const footerFirstUse = document.getElementById('footer-first-use');
-          const footerSignupText = document.getElementById('footer-signup-text');
-          
-          if (confirmGroup) confirmGroup.style.display = 'none';
-          if (loginBtn) loginBtn.textContent = getString('login.login');
-          if (signupBtn) signupBtn.textContent = getString('login.signup');
-          if (footerFirstUse) footerFirstUse.textContent = getString('login.first_login');
-          if (footerSignupText) footerSignupText.textContent = getString('login.signup');
-          clearAllErrors();
-        }, 1500);
+        // Store current user and initialize onboarding
+        window.currentUser = signUpData.user;
+        if (typeof initializeOnboarding === 'function') {
+          initializeOnboarding();
+        } else {
+          console.error('Onboarding module not loaded');
+        }
         return;
       } catch (err) {
         console.error('Signup exception:', err);
@@ -162,10 +164,13 @@ async function handleLogin(e) {
           localStorage.removeItem('rememberedEmail');
         }
 
-        // Fetch user's language preference from profile
+        // Store current user
+        window.currentUser = data.user;
+
+        // Fetch user's profile data (language + mandatory fields)
         const { data: profileData, error: profileError } = await window.supabase
           .from('profiles')
-          .select('language')
+          .select('language, first_name, last_name, reports_to_email')
           .eq('email', email)
           .single();
         
@@ -173,7 +178,32 @@ async function handleLogin(e) {
           updateLanguageFromProfile(profileData.language);
         }
 
-        loadView('home');
+        // Check if user needs to complete onboarding (missing mandatory fields)
+        const needsOnboarding = !profileData?.first_name || !profileData?.last_name || !profileData?.reports_to_email;
+        
+        if (needsOnboarding) {
+          // Hide login form before showing onboarding
+          const loginContainer = document.getElementById('login-container');
+          if (loginContainer) {
+            loginContainer.style.display = 'none';
+            loginContainer.style.visibility = 'hidden';
+            loginContainer.style.pointerEvents = 'none';
+            loginContainer.style.zIndex = '-9999';
+            loginContainer.innerHTML = '';
+            console.log('Login container hidden for onboarding');
+          }
+          
+          // Show onboarding modal instead of home
+          if (typeof initializeOnboarding === 'function') {
+            initializeOnboarding();
+          } else {
+            console.error('Onboarding module not loaded');
+            loadView('home');
+          }
+        } else {
+          // All mandatory fields complete, proceed to home
+          loadView('home');
+        }
         return;
       } catch (err) {
         showGeneralMessage(err.message || getString('login.login_failed'));
