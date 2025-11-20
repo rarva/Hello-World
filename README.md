@@ -63,9 +63,14 @@ Complete authentication system with post-signup onboarding, avatar management, a
 - Supabase PostgreSQL `profiles` table with columns:
   - `id` (UUID, primary key)
   - `email` (text, unique)
-  - `full_name` (text)
+  - `full_name` (text) - deprecated, use first_name + last_name
+  - `first_name` (text) - user's first name
+  - `last_name` (text) - user's last name
+  - `reports_to_email` (text) - manager's email address
+  - `avatar_url` (text) - public Supabase Storage URL
   - `language` (text - user's preferred language)
   - `created_at` (timestamp)
+  - `updated_at` (timestamp)
 - User data synchronized between auth system and database
 
 ### ✅ Multi-Language Support (5 Languages)
@@ -100,7 +105,7 @@ Complete authentication system with post-signup onboarding, avatar management, a
 ```bash
 git clone https://github.com/rarva/Hello-World.git
 cd Hello-World
-git checkout v1.0.0-auth-system
+git checkout v1.0.1
 ```
 
 ### 2. Configure Supabase
@@ -128,24 +133,51 @@ python -m http.server 8000
 
 ```
 ├── index.html                 # Main app shell with persistent containers
+├── main.js                    # Session management + UI orchestration
 ├── config.js                  # Supabase credentials (git-ignored)
 ├── strings.json              # All UI translations (30+ keys × 5 languages)
 ├── strings_helper.js         # i18n + browser language detection
-├── load_control.js           # Container loader + session checker
 ├── styles.css                # Base layout (flexbox)
+│
+├── avatar/                   # Avatar upload + initials fallback
+│   ├── avatar.html
+│   ├── avatar_init.js        # Setup + upload to Supabase Storage
+│   └── avatar_styles.css
 │
 ├── login/                    # Authentication system
 │   ├── login.html
-│   ├── load_login.js         # Signup/login/logout logic
+│   ├── login_init.js         # UI initialization
+│   ├── login_auth.js         # Signup/login/logout logic
+│   ├── login_errors.js       # Error handling
 │   └── login_styles.css
+│
+├── onboarding/               # Post-signup profile completion
+│   ├── onboarding.html
+│   ├── onboarding_init.js    # Modal + form handling
+│   ├── onboarding_errors.js  # Form validation errors
+│   └── onboarding_styles.css
+│
+├── toolbar/                  # Top navigation bar
+│   ├── toolbar.html
+│   ├── toolbar_init.js       # Setup + styling
+│   ├── toolbar_errors.js     # Error handling
+│   └── toolbar_styles.css
+│
+├── home/                     # Main app page
+│   ├── home.html
+│   ├── home_init.js          # Setup + view loading
+│   ├── home_errors.js        # Error handling
+│   └── home_styles.css
 │
 ├── footer/                   # Footer with logout
 │   ├── footer.html
-│   ├── load_footer.js
+│   ├── footer_init.js        # Setup + logout handling
+│   ├── footer_errors.js      # Error handling
 │   └── footer_styles.css
 │
 └── migrations/
-    └── 001_create_profiles.sql
+    ├── 001_create_profiles.sql
+    └── 002_extend_profiles.sql
 ```
 
 ---
@@ -153,8 +185,9 @@ python -m http.server 8000
 ## Supabase Setup
 
 1. Create project at https://supabase.com
-2. Run in SQL Editor:
+2. Run in SQL Editor both migration files:
    ```sql
+   -- Migration 001_create_profiles.sql
    CREATE TABLE profiles (
      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
      email TEXT UNIQUE NOT NULL,
@@ -162,9 +195,22 @@ python -m http.server 8000
      language TEXT DEFAULT 'en',
      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
    );
+   
+   -- Migration 002_extend_profiles.sql (v1.0.1+)
+   ALTER TABLE profiles ADD COLUMN first_name TEXT;
+   ALTER TABLE profiles ADD COLUMN last_name TEXT;
+   ALTER TABLE profiles ADD COLUMN reports_to_email TEXT;
+   ALTER TABLE profiles ADD COLUMN avatar_url TEXT;
+   ALTER TABLE profiles ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
    ```
 3. Get Project URL and Anon Key → add to `config.js`
 4. Enable email/password auth (disable confirmation for testing)
+5. Create `avatars` Storage bucket:
+   - Visibility: Public
+   - Enable public read access in RLS policies
+6. Set RLS Policies on avatars bucket:
+   - **SELECT:** Allow `bucket_id = 'avatars' AND extension = 'png'` for all users
+   - **INSERT:** Allow `bucket_id = 'avatars' AND extension = 'png'` for authenticated users
 
 ---
 
@@ -198,9 +244,12 @@ python -m http.server 8000
 ## Known Issues / Future Work
 
 - ⚠️ Toolbar buttons in browser language (iframe context limitation)
-- 🔄 Password reset
+- 🔄 Password reset functionality
 - 🔄 Email confirmation flow
-- 🔄 User profile editing
+- 🔄 Profile editing/settings page
+- 🔄 Manager email invitation trigger
+- 🔄 Avatar display in home and toolbar components
+- 🔄 Optional profile fields (company, department, phone, bio)
 
 ---
 
@@ -220,7 +269,7 @@ python -m http.server 8000
 
 ---
 
-**Version:** v1.0.0-auth-system | **Updated:** November 19, 2025
+**Version:** v1.0.1-onboarding-complete | **Updated:** November 20, 2025
 
 ---
 
