@@ -3,12 +3,24 @@ Rhomberg OrgChart Admin - Multi-language authentication system with Supabase bac
 
 Company colors: #DA162A (Dark Red), #EB8318 (Orange), #010101 (Black)
 
-## Current Version: v1.0.0-auth-system (Latest: Refactored & Polished)
+## Current Version: v1.0.1-onboarding-complete (Latest: Avatar + Profile Onboarding)
 
 ### Development Status: ✅ STABLE
-Complete authentication and multi-language system implemented, tested, and refactored for code quality.
+Complete authentication system with post-signup onboarding, avatar management, and profile data collection fully implemented and tested.
 
-### Latest Update (Current Commit)
+### Latest Update (Current Release - v1.0.1)
+**Avatar Upload & Profile Onboarding System**
+- **Avatar component:** Independent reusable component with drag-and-drop file selection
+- **Image compression:** Canvas-based compression to 220×220px PNG (30-80KB typical)
+- **Supabase Storage:** Public file hosting with automatic URL retrieval
+- **Initials fallback:** Deterministic 10-color palette for auto-generated avatars
+- **Onboarding modal:** Post-signup profile completion (first name, last name, manager email)
+- **Profile persistence:** All user data saved to `profiles` table with avatar URL
+- **Two-element button UI:** Avatar plus button expands to CHOOSE FILE (smooth UX)
+- **Clean error handling:** Specific messages for missing fields, failed uploads, database errors
+- **Login/onboarding flow:** Seamless transition with proper modal layering
+
+### Previous Version (v1.0.0-auth-system)
 - **Code restructuring:** Standardized file naming convention (load_*.js → *_init.js)
 - **Auth logic separation:** Split login module into login_init.js (UI) + login_auth.js (authentication)
 - **UI Polish:** Removed animation jank, improved focus states, better password visibility
@@ -19,6 +31,25 @@ Complete authentication and multi-language system implemented, tested, and refac
 ---
 
 ## Features Implemented
+
+### ✅ Avatar Management System (v1.0.1)
+- **Avatar upload:** Click plus button → select file → preview displayed
+- **Drag-and-drop:** Drop image files onto avatar area for immediate preview
+- **Image compression:** Canvas-based resize to 220×220px PNG format
+- **Supabase Storage:** Upload to `public/` folder in "avatars" bucket
+- **Initials fallback:** Auto-generate avatar with first/last name initials
+- **Deterministic colors:** 10-color professional palette, same person = same color
+- **Graceful errors:** If upload fails, seamlessly fallback to initials avatar
+- **File size validation:** Automatic compression to 30-80KB typical
+
+### ✅ Profile Onboarding (v1.0.1)
+- **Onboarding modal:** Appears after successful signup
+- **Required fields:** First name, last name, reports-to email address
+- **Form validation:** All fields validated before save, errors displayed inline
+- **Profile data persistence:** All fields saved to `profiles` table
+- **Avatar URL storage:** Public Supabase Storage URL saved with profile
+- **User confirmation:** After save, modal hidden and home page loaded
+- **Returning incomplete profiles:** Users with incomplete profiles see onboarding on login
 
 ### ✅ Authentication System
 - Email/password signup with real-time database storage
