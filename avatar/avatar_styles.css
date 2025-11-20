@@ -1,0 +1,98 @@
+/* ===== Avatar Upload Component Styles ===== */
+
+/* Avatar Placeholder Base */
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+  border: var(--border-width) solid var(--color-border-dark);
+  border-radius: 50%;
+  background: #d8d8d8;
+  position: relative;
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+
+.avatar-placeholder:hover {
+  background: #ccc;
+}
+
+.avatar-placeholder svg {
+  width: 80px;
+  height: 80px;
+}
+
+/* Plus Button - the + sign */
+.avatar-plus-btn {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  bottom: 1px;
+  right: 0px;
+  padding: 0;
+  border: none;
+  background: var(--color-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-plus-btn::before {
+  content: '+';
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.avatar-plus-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.avatar-plus-btn:active {
+  transform: translateY(0);
+}
+
+/* Choose File Button */
+.avatar-choose-btn {
+  position: absolute;
+  width: 168px;
+  height: 32px;
+  bottom: 1px;
+  right: -136px;
+  padding: 0;
+  border: none;
+  background: var(--color-secondary);
+  border-radius: 16px;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-choose-btn span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.avatar-choose-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.avatar-choose-btn:active {
+  transform: translateY(0);
+}

@@ -1,0 +1,21 @@
+<!-- Avatar Upload Component -->
+<div class="avatar-section">
+  <div class="avatar-placeholder" id="avatar-placeholder">
+    <svg id="avatar-placeholder-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="35" r="18" fill="#8b8b8b"/>
+      <path d="M 25 75 Q 25 55 50 55 Q 75 55 75 75" fill="#8b8b8b"/>
+    </svg>
+    <img id="avatar-preview" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+    
+    <!-- Plus button -->
+    <button type="button" id="avatar-plus-btn" class="avatar-plus-btn"></button>
+
+    <!-- Choose File button -->
+    <button type="button" id="avatar-choose-btn" class="avatar-choose-btn" style="display: none;">
+      <span id="avatar-button-text"></span>
+    </button>
+  </div>
+  
+  <!-- File input -->
+  <input type="file" id="avatar-file-input" accept="image/*" style="display: none;" />
+</div>

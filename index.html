@@ -8,6 +8,8 @@
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
   <!-- Main stylesheet -->
   <link rel="stylesheet" href="styles.css" />
+  <!-- Avatar stylesheet -->
+  <link rel="stylesheet" href="avatar/avatar_styles.css" />
   <!-- Login form stylesheet -->
   <link rel="stylesheet" href="login/login_styles.css" />
   <!-- Home stylesheet -->
@@ -26,19 +28,24 @@
     <div id="login-container"></div>
     <!-- Placeholder toolbar container - shown after login -->
     <div id="toolbar-container"></div>
+    <!-- Placeholder onboarding container - shown when user needs profile completion -->
+    <div id="onboarding-container"></div>
     <!-- Placeholder home container - shown after login -->
     <div id="home-container"></div>
     <!-- Placeholder footer container - always at bottom -->
     <div id="footer-container"></div>
   </div>
   <!-- Module loading (all init files follow same pattern) -->
+  <script src="avatar/avatar_init.js"></script>
   <script src="login/login_init.js"></script>
   <script src="login/login_auth.js"></script>
+  <script src="onboarding/onboarding_init.js"></script>
   <script src="toolbar/toolbar_init.js"></script>
   <script src="home/home_init.js"></script>
   <script src="footer/footer_init.js"></script>
   <!-- Error handling modules -->
   <script src="login/login_errors.js"></script>
+  <script src="onboarding/onboarding_errors.js"></script>
   <script src="toolbar/toolbar_errors.js"></script>
   <script src="home/home_errors.js"></script>
   <script src="footer/footer_errors.js"></script>
