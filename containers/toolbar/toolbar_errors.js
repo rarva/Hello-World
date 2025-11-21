@@ -16,7 +16,7 @@ window.showToolbarError = function(message) {
 
 /**
  * Show loading message in toolbar
- * @param {string} messageKey - Key from strings.json
+ * @param {string} messageKey - Key from language_strings.json
  */
 window.showToolbarLoading = function(messageKey) {
   const toolbarLinks = document.getElementById('toolbar-links');

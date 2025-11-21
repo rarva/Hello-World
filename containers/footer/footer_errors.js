@@ -5,7 +5,7 @@
 
 /**
  * Show footer error message
- * @param {string} messageKey - Key from strings.json for the error message
+ * @param {string} messageKey - Key from language_strings.json for the error message
  */
 window.showFooterError = function(messageKey) {
   const info = document.getElementById('footer-info');
@@ -17,7 +17,7 @@ window.showFooterError = function(messageKey) {
 
 /**
  * Show footer info message
- * @param {string} messageKey - Key from strings.json for the info message
+ * @param {string} messageKey - Key from language_strings.json for the info message
  */
 window.showFooterInfo = function(messageKey) {
   const info = document.getElementById('footer-info');

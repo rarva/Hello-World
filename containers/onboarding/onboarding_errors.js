@@ -17,4 +17,4 @@ window.clearOnboardingError = function() {
     errorEl.style.display = 'none';
     errorEl.textContent = '';
   }
-};
+}

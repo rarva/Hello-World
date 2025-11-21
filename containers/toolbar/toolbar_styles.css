@@ -1,4 +1,37 @@
 /* ===== TOOLBAR STYLES ===== */
+/* Toolbar Avatar Button */
+#toolbar-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px ;
+  height: 40px;
+  border-radius: 50%;
+  margin: 0;
+  background: var(--color-secondary);
+  cursor: pointer;
+  color: white;
+}
+
+#toolbar-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+
+
+#toolbar-avatar-btn {
+  position: absolute;
+  right: 140px;
+  top: 15px;  /* Align with the top of the toolbar links */
+  z-index: 10;
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 50%;
+}
 
 .toolbar {
   display: flex;
@@ -7,13 +40,17 @@
   font-family: Verdana, sans-serif;
   height: var(--toolbar-height);
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
   margin-top: 10px;
+  position: relative;
+ 
 }
 
 #toolbar-links {
+ 
   display: flex;
+  align-items: flex-start;
   gap: 10px;
   padding-left: 20px;
   padding-top: 20px;
@@ -23,18 +60,19 @@
 }
 
 #toolbar-links a {
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: calc(var(--toolbar-height) / 3);
-  min-width: 110px;
+  min-width: 100px;
   margin: 0 8px;
   padding: 0 18px;
   background-color: var(--color-text-light);
   color: var(--color-primary);
   text-align: center;
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   box-sizing: border-box;
   box-shadow: none;
   transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
@@ -43,22 +81,24 @@
 #toolbar-links a:hover {
   background-color: var(--color-secondary);
   color: var(--color-text-light);
-  transform: translateY(-2px);
+
 }
 
 .toolbar-train {
-  display: flex;
-  align-items: center;
-  padding-right: 20px;
-  background-color: var(--color-bg);
-  flex-shrink: 0;
+
+
+  width: 200px;
+  height: 100px;
+background-color: var(--color-bg);
+ 
 }
 
-.toolbar-train svg,
-.toolbar-train .inline-train-svg {
-  height: var(--toolbar-height);
-  width: auto;
-  color: var(--color-primary);
-  fill: var(--color-primary);
-  stroke: none;
+.inline-train-svg {
+  width: 200px;
+  height: 100px;
+  color: var(--color-primary  );
+  position: absolute;
+  right: 10px;  /* MARGEN ENTRE O NARIZ DO COMBOIO E A DIREITA*/
+
+
 }
