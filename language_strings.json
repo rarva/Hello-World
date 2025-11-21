@@ -419,5 +419,82 @@
     "de": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
     "fr": "Veuillez entrer une adresse e-mail valide",
     "it": "Inserisci un indirizzo email valido"
+  },
+  "profile.editProfile": {
+    "en": "Edit Profile",
+    "pt": "Editar Perfil",
+    "de": "Profil bearbeiten",
+    "fr": "Modifier le profil",
+    "it": "Modifica profilo"
+  },
+  "profile.settings": {
+    "en": "Settings",
+    "pt": "Configurações",
+    "de": "Einstellungen",
+    "fr": "Paramètres",
+    "it": "Impostazioni"
+  },
+  "profile.logout": {
+    "en": "Log Out",
+    "pt": "Sair",
+    "de": "Abmelden",
+    "fr": "Déconnexion",
+    "it": "Esci"
+  },
+  "profile.role": {
+    "en": "Role",
+    "pt": "Função",
+    "de": "Rolle",
+    "fr": "Rôle",
+    "it": "Ruolo"
+  },
+  "profile.firstName": {
+    "en": "First Name",
+    "pt": "Primeiro Nome",
+    "de": "Vorname",
+    "fr": "Prénom",
+    "it": "Nome"
+  },
+  "profile.lastName": {
+    "en": "Last Name",
+    "pt": "Sobrenome",
+    "de": "Nachname",
+    "fr": "Nom de famille",
+    "it": "Cognome"
+  },
+  "profile.email": {
+    "en": "Email",
+    "pt": "Email",
+    "de": "E-Mail",
+    "fr": "Email",
+    "it": "Email"
+  },
+  "profile.save": {
+    "en": "Save Changes",
+    "pt": "Guardar Alterações",
+    "de": "Änderungen speichern",
+    "fr": "Enregistrer les modifications",
+    "it": "Salva modifiche"
+  },
+  "profile.cancel": {
+    "en": "Cancel",
+    "pt": "Cancelar",
+    "de": "Abbrechen",
+    "fr": "Annuler",
+    "it": "Annulla"
+  },
+  "profile.error.saveSuccess": {
+    "en": "Profile updated successfully",
+    "pt": "Perfil atualizado com sucesso",
+    "de": "Profil erfolgreich aktualisiert",
+    "fr": "Profil mis à jour avec succès",
+    "it": "Profilo aggiornato con successo"
+  },
+  "profile.error.saveFailed": {
+    "en": "Failed to save profile",
+    "pt": "Falha ao guardar perfil",
+    "de": "Fehler beim Speichern des Profils",
+    "fr": "Échec de l'enregistrement du profil",
+    "it": "Errore nel salvataggio del profilo"
   }
 }

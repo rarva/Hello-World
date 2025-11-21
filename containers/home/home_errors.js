@@ -16,7 +16,7 @@ window.showHomeError = function(message) {
 
 /**
  * Show loading message in home container
- * @param {string} messageKey - Key from strings.json
+ * @param {string} messageKey - Key from language_strings.json
  */
 window.showHomeLoading = function(messageKey) {
   const homeContainer = document.getElementById('home-container');

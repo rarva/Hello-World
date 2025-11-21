@@ -7,6 +7,7 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100vh;
+  min-width: 640px;
   font-family: Verdana, sans-serif;
   overflow: hidden;
 }
@@ -94,7 +95,7 @@ html, body {
   --radius: 10px;                  /* Global border radius */
   --border-width: 1.5px;           /* Global border thickness */
   --font-size-regular: 12px;       /* Global regular text size */
-
+ --font-size-header: 20px;       /* Global regular text size */
   
   /* Avatar initials color palette (cycling through 12 colors) */
   --avatar-color-1:  #e53e38;       /* Red */

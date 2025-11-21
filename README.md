@@ -78,7 +78,7 @@ Complete authentication system with post-signup onboarding, avatar management, a
 - **Auto-detection:** Browser/system language detected on first visit → fallback to English
 - **Persistence:** User's language preference saved to their profile in database
 - **Smart loading:** Language loaded from user's profile after login (not from browser)
-- **All UI text from strings.json** (Rule 1: No hardcoded English text)
+- **All UI text from language_strings.json** (Rule 1: No hardcoded English text)
 - **Comprehensive translations:** 30+ UI strings × 5 languages
 
 ### ✅ User Experience
@@ -135,8 +135,8 @@ python -m http.server 8000
 ├── index.html                 # Main app shell with persistent containers
 ├── main.js                    # Session management + UI orchestration
 ├── config.js                  # Supabase credentials (git-ignored)
-├── strings.json              # All UI translations (30+ keys × 5 languages)
-├── strings_helper.js         # i18n + browser language detection
+├── language_strings.json              # All UI translations (30+ keys × 5 languages)
+├── language_manager.js         # i18n + browser language detection
 ├── styles.css                # Base layout (flexbox)
 │
 ├── avatar/                   # Avatar upload + initials fallback
@@ -237,7 +237,7 @@ python -m http.server 8000
 
 **After Login:** Language loaded from profile (browser language ignored)
 
-**Adding Translations:** Add to `strings.json`, use `getString()` in code
+**Adding Translations:** Add to `language_strings.json`, use `getString()` in code
 
 ---
 
