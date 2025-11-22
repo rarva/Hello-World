@@ -10,19 +10,32 @@
   flex-shrink: 0;
   border: var(--border-width) solid var(--color-border-dark);
   border-radius: 50%;
-  background: #d8d8d8;
+  background: var(--color-muted) ;
   position: relative;
   cursor: pointer;
   transition: background 200ms ease;
 }
 
 .avatar-placeholder:hover {
-  background: #ccc;
+  opacity: .9;
+transition:  200ms ease;
 }
 
 .avatar-placeholder svg {
-  width: 80px;
-  height: 80px;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  color: var(--font-color-dark);
+  z-index: 1;
+}
+
+/* Avatar preview image: fill placeholder and preserve cover cropping */
+#avatar-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  border-radius: 50%;
 }
 
 /* Plus Button - the + sign */
@@ -32,33 +45,30 @@
   height: 32px;
   bottom: 1px;
   right: 0px;
-  padding: 0;
   border: none;
-  background: var(--color-secondary);
   border-radius: 50%;
   cursor: pointer;
   outline: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--color-secondary);
+ padding:0;
+  z-index: 5;
+
 }
 
-.avatar-plus-btn::before {
-  content: '+';
-  color: white;
-  font-size: 20px;
-  font-weight: bold;
-  line-height: 1;
+/* Stretch inline SVG to occupy the whole button (may distort) */
+.avatar-plus-btn svg {
+  /* Let the SVG fill the button box and keep aspect ratio; SVG now has cropped viewBox. */
+  width: 100%;
+  height: 100%;
+  display: block;
+  color:var(--color-secondary);
 }
 
-.avatar-plus-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
 
-.avatar-plus-btn:active {
-  transform: translateY(0);
-}
+
 
 /* Choose File Button */
 .avatar-choose-btn {
@@ -70,27 +80,29 @@
   padding: 0;
   border: none;
   background: var(--color-secondary);
-  border-radius: 16px;
+  border-radius: 16px; /*ignore - uniformity checks */
   cursor: pointer;
   outline: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 5;
 }
 
 .avatar-choose-btn span {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-bold-heavy);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: white;
+  color:var(--color-bg);
   text-align: center;
   white-space: nowrap;
+  z-index: 5;
 }
 
 .avatar-choose-btn:hover {
   opacity: 0.9;
-  transform: translateY(-1px);
+
 }
 
 .avatar-choose-btn:active {

@@ -28,8 +28,7 @@
 
 .home-content {
   padding: 20px;
-  font-size: 24px;
+  font-size: var(--font-size-regular);
   color: var(--color-primary);
-  font-weight: bold;
   text-align: center;
 }

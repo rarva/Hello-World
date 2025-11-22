@@ -1,8 +1,8 @@
-/* Footer styles for app-wide notifications/info */
 .app-footer {
+  /* Footer styles for app-wide notifications/info */
   width: 100%;
   background: var(--color-primary);
-  color: var(--color-text-light);
+  color: var(--font-color-light);
   font-size: var(--font-size-regular);
   height: 28px;
   padding: 0 12px;
@@ -13,28 +13,10 @@
   flex-shrink: 0;
   z-index: 1000;
 }
+
+
 .footer-indicator {
   margin-right: 12px;
-  font-weight: normal;
-  color: var(--color-text-light); /* Ensure text is light */
+  color: var(--font-color-light); /* Ensure text is light */
 }
-
-.logout-btn {
-  background: none;
-  border: 1px solid var(--color-text-light);
-  color: var(--color-text-light);
-  padding: 4px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  border-radius: 3px;
-  transition: all 0.2s ease;
-}
-
-.logout-btn:hover {
-  background: var(--color-text-light);
-  color: var(--color-primary);
-}
-
-.logout-btn:active {
-  opacity: 0.8;
-}
+/* logout button removed from footer; profile component handles logout */

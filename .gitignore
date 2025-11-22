@@ -3,3 +3,6 @@ config.js
 
 # Copilot guide (for agent use only)
 COPILOT_GUIDE.txt
+
+# Local uniformity/lint check scripts (developer-only)
+uniformity_checks/

@@ -23,7 +23,8 @@ function initFooterContainer() {
       initFooter();
     })
     .catch(err => {
-      showFooterError('Failed to load footer');
+      if (typeof getString === 'function') showFooterError(getString('footer.load_failed'));
+      else showFooterError('Failed to load footer');
       console.error('Failed to load footer:', err);
     });
 }
@@ -46,27 +47,9 @@ async function initFooter() {
     if (info) info.textContent = getString('footer.copyright');
   }
   
-  // Setup logout button
-  const logoutBtn = document.getElementById('logout-btn');
-  if (logoutBtn) {
-    logoutBtn.textContent = getString('app.logout');
-    logoutBtn.addEventListener('click', handleLogout);
-  }
 }
 
 /**
  * Handle logout
  */
-async function handleLogout() {
-  if (window.supabase) {
-    try {
-      await window.supabase.auth.signOut();
-      // Don't remove rememberedEmail - keep it so user can quickly log back in
-      // Only Supabase tokens are cleared by signOut()
-      window.location.href = 'index.html';
-    } catch (err) {
-      console.error('Logout error:', err);
-      alert('Logout failed');
-    }
-  }
-}
+// logout is handled by profile component (profile-logout-btn)

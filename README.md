@@ -346,3 +346,28 @@ Migration & import:
 - If you have existing users stored in localStorage, use `migrate_users.js` to import them.
 	This script requires `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` (the service_role key)
 	as environment variables and must be run locally.
+
+---
+
+## Backup Snapshot: v1.0.1-onboarding-complete (2025-11-22)
+
+This is a stable project snapshot created before further refactors. It includes the
+following notable changes since the previous release listed above:
+
+- Renamed `containers/profile` → `containers/user_menu` and added compatibility shims
+  (`user_menu_init.js` exports new names while mapping old `initProfileModal` /
+  `openProfileModal` back to the new API).
+- Added uniformity tooling under `uniformity_checks/` to detect hardcoded fonts, colors,
+  strings, scrollbar styles, and tooltip issues; the runner supports background runs.
+- Avatar improvements: preview image fills placeholder (`object-fit: cover`), plus-icon
+  SVG viewBox normalized so the glyph scales to the button, and CSS adjusted.
+- Updated `containers/toolbar/toolbar_init.js` to call the new `user_menu` API.
+
+Branch + commit:
+
+- Branch created: `backup/v1.0.1-onboarding-2025-11-22`
+- Commit: `chore(backup): stable snapshot v1.0.1-onboarding-complete (2025-11-22)`
+
+If you want a full rename of DOM IDs and classes from `profile-*` → `user_menu-*`,
+I can perform that as a follow-up (it is more invasive and will update many selectors
+and CSS rules).

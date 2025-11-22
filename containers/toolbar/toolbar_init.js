@@ -23,7 +23,8 @@ function initToolbarContainer() {
       initToolbar();
     })
     .catch(err => {
-      showToolbarError('Failed to load toolbar');
+      if (typeof getString === 'function') showToolbarError(getString('toolbar.load_failed'));
+      else showToolbarError('Failed to load toolbar');
       console.error('Failed to load toolbar:', err);
     });
 }
@@ -107,14 +108,14 @@ function setupAvatarButton() {
     const maxAttempts = 50; // 5 seconds max wait (50 * 100ms)
     
     while (attempts < maxAttempts) {
-      if (typeof window.initProfileModal === 'function' && typeof window.openProfileModal === 'function') {
-        console.log('Profile module found, initializing...');
+      if (typeof window.initUserMenu === 'function' && typeof window.openUserMenu === 'function') {
+        console.log('User menu module found, initializing...');
         try {
-          await window.initProfileModal();
-          console.log('Profile modal initialized successfully');
+          await window.initUserMenu();
+          console.log('User menu initialized successfully');
           return true;
         } catch (err) {
-          console.error('Failed to initialize profile modal:', err);
+          console.error('Failed to initialize user menu:', err);
           return false;
         }
       }
@@ -133,19 +134,19 @@ function setupAvatarButton() {
   displayToolbarAvatar();
 
   // Add click event to open profile modal
-  avatarBtn.addEventListener('click', async (e) => {
+    avatarBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     e.stopPropagation();
     console.log('Avatar button clicked');
-    if (typeof window.openProfileModal === 'function') {
-      console.log('Calling window.openProfileModal()');
+    if (typeof window.openUserMenu === 'function') {
+      console.log('Calling window.openUserMenu()');
       try {
-        await window.openProfileModal();
+        await window.openUserMenu();
       } catch (err) {
-        console.error('Error opening profile modal:', err);
+        console.error('Error opening user menu:', err);
       }
     } else {
-      console.warn('window.openProfileModal is not yet available');
+      console.warn('window.openUserMenu is not yet available');
     }
   });
 }
@@ -181,15 +182,36 @@ function displayToolbarAvatar() {
 
           avatarEl.innerHTML = '';
 
+          // Prefer the centralized AvatarStore if available
+          const storeImage = window.AvatarStore && typeof window.AvatarStore.getImage === 'function'
+            ? window.AvatarStore.getImage()
+            : null;
+
+          if (storeImage) {
+            const img = document.createElement('img');
+            img.src = storeImage;
+            img.alt = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim();
+            avatarEl.appendChild(img);
+            return;
+          }
+
           if (profile?.avatar_url) {
+            // populate the AvatarStore for future use
+            if (window.AvatarStore && typeof window.AvatarStore.setImage === 'function') {
+              try { window.AvatarStore.setImage(profile.avatar_url); } catch (e) { /* ignore */ }
+            }
+
             const img = document.createElement('img');
             img.src = profile.avatar_url;
             img.alt = `${profile.first_name} ${profile.last_name}`;
             avatarEl.appendChild(img);
           } else {
-            // Show question mark fallback
-            avatarEl.textContent = '?';
-            // Keep default orange background
+            // Show placeholder via translation when available; no hardcoded fallback
+            if (typeof getString === 'function') {
+              avatarEl.textContent = getString('avatar.placeholder');
+            } else {
+              avatarEl.textContent = '';
+            }
           }
           return;
         }
@@ -241,26 +263,3 @@ function getInitialsToolbar(firstName = '', lastName = '') {
   return (f + l) || '?';
 }
 
-/**
- * Helper: Get deterministic color for initials
- */
-function getColorForInitialsToolbar(firstName = '', lastName = '') {
-  const colors = [
-  '#e53e38',       /* Red */
-  '#ff8e1d',       /* Orange */
-  '#FFD93D',       /* Yellow */
-  '#9ACD32',       /* Green */
-  '#4D96FF',       /* Blue */
-  '#7B68EE',       /* Purple */
-  '#FF6B9D',       /* Pink */
-  '#bb713c',       /* Brown */
-  '#00D9FF',       /* Cyan */
-  '#379787',      /* Esmerald */
-  ];
-  const str = `${firstName}${lastName}`;
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash % colors.length)];
-}

@@ -1,36 +1,27 @@
 /* ===== Language Combobox ===== */
 #lang-select {
-  margin-right: 8px;
+  margin-right: 0;
   font-size: var(--font-size-regular);
   color: var(--color-primary);
   background: var(--color-bg);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius);
-  padding: 4px 8px;
-  z-index: 10001;
+  padding: 0 5px;
+  z-index: 1000;
 }
 
 /* ===== Language Switcher Button ===== */
 #lang-btn {
   cursor: pointer;
   outline: none !important;
-  background: none !important;
+  background: var(--transparent) !important;
   border: none !important;
-  transition: opacity 200ms ease;
-}
-
-#lang-btn:focus,
-#lang-btn:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-#lang-btn:hover {
-  opacity: 0.7;
+  color: var(--color-primary);
 }
 
 #lang-btn svg {
-  outline: none !important;
+  color: var(--color-primary);
+  
 }
 
 /* ===== Login Container ===== */
@@ -44,7 +35,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 10000;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-stack);
   padding: 20px 0;
 }
 
@@ -59,17 +50,17 @@
 
 /* ===== Brand Section ===== */
 #brand-name {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: var(--font-size-title);
+  font-weight: var(--font-bold-heavy); 
   color: var(--color-primary);
   letter-spacing: -0.5px;
 }
 
 .brand-tagline {
   margin: 20px 0;
-  font-size: 13px;
+  font-size: var(--font-size-header);
   color: var(--color-primary);
-  font-weight: 500;
+  font-weight: var(--font-bold);
   letter-spacing: 0.3px;
   text-transform: uppercase;
 }
@@ -92,8 +83,14 @@
 .login-form label {
   font-size: var(--font-size-regular);
   color: var(--color-black);
-  letter-spacing: 0.5px;
+
   margin: 0;
+}
+
+/* Adjust spacing for the signup confirm label specifically */
+#signup-confirm-label {
+  display: block;
+  margin: 0 0 6px 0; /* top, right, bottom, left */
 }
 
 /* ===== Form Inputs (Shared Base) ===== */
@@ -108,6 +105,7 @@
   background: var(--color-bg);
   transition: all 200ms ease;
   outline: none;
+  font-size: var(--font-size-regular);
 }
 
 /* ===== Autofill Styling (Consolidated) ===== */
@@ -116,7 +114,7 @@
 .password-wrapper input[type="password"]:-webkit-autofill,
 .password-wrapper input[type="text"]:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px var(--color-bg) inset !important;
-  -webkit-text-fill-color: var(--color-text-dark) !important;
+  -webkit-text-fill-color: var(--font-color-dark) !important;
 }
 
 /* ===== Focus States (Consolidated) ===== */
@@ -125,13 +123,13 @@
 .password-wrapper input[type="password"]:focus,
 .password-wrapper input[type="text"]:focus {
   border-color: var(--color-primary);
-  background: var(--color-text-light);
+  background: var(--color-bg);
 }
 
 /* ===== Placeholder Styling ===== */
 .login-form input::placeholder,
 .password-wrapper input::placeholder {
-  color: var(--color-text-dark);
+  color: var(--font-color-dark);
 }
 
 .password-wrapper input::placeholder {
@@ -160,7 +158,7 @@
 }
 
 .password-wrapper input[type="password"] {
-  font-size: 30px;
+  font-size: var(--font-size-title);
 }
 
 /* User input opacity override */
@@ -194,8 +192,8 @@
 }
 
 .eye-icon {
-  width: 18px;
-  height: 18px;
+  width: var(--icon-size);
+  height: var(--icon-size);
   color: var(--color-primary);
   stroke: var(--color-primary);
 }
@@ -207,6 +205,12 @@
   font-size: var(--font-size-regular);
   display: flex;
   align-items: center;
+}
+
+/* Spacing for specific field errors (password, confirm password) */
+#password-error,
+#confirm-error {
+  margin: 6px 0 0 0; /* top, right, bottom, left */
 }
 
 .login-form input.error {
@@ -227,28 +231,53 @@
   align-items: center;
   gap: 6px;
   font-size: var(--font-size-regular);
-  font-weight: 400;
-  color: var(--color-text-dark);
+
+  color: var(--font-color-dark);
   cursor: pointer;
   user-select: none;
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: var(--icon-size);
+  height: var(--icon-size);
   cursor: pointer;
   accent-color: var(--color-primary);
   border-radius: var(--radius);
 }
 
 .checkbox-label:hover {
-  color: var(--color-text-dark);
+  color: var(--font-color-dark);
 }
 
 /* ===== Link Buttons (Shared) ===== */
-.link-btn,
+.link-btn{
+background: none;
+  border: none;
+  color: var(--font-color-dark);
+  cursor: pointer;
+  font-size: var(--font-size-regular);
+  text-decoration: none;
+  padding: 0;
+  transition: opacity 200ms ease;
+  outline: none;
+
+}
+
+
 .forgot-password-btn,
-.footer-link,
+.footer-link {
+  background: none;
+  border: none;
+  color: var(--font-color-dark);
+  cursor: pointer;
+  font-size: var(--font-size-regular);
+  text-decoration: none;
+  padding: 0;
+  transition: opacity 200ms ease;
+  outline: none;
+}
+
+
 .signup-link {
   background: none;
   border: none;
@@ -257,7 +286,7 @@
   font-size: var(--font-size-regular);
   text-decoration: none;
   padding: 0;
-  font-weight: 600;
+  font-weight: var(--font-bold-heavy);
   transition: opacity 200ms ease;
   outline: none;
 }
@@ -268,13 +297,10 @@
 .signup-link:hover,
 .signup-link:focus {
   opacity: 0.7;
-  text-decoration: underline;
+
 }
 
-.forgot-password-btn {
-  color: var(--color-text-dark);
-  font-weight: 400;
-}
+
 
 /* ===== Action Buttons ===== */
 .login-actions {
@@ -289,7 +315,7 @@
   border: none;
   border-radius: var(--radius);
   font-size: var(--font-size-regular);
-  font-weight: 600;
+  font-weight:  var(--font-bold-heavy);
   cursor: pointer;
   transition: all 200ms ease;
   flex: 1;
@@ -300,7 +326,7 @@
 
 .btn-primary {
   background: var(--color-button);
-  color: white;
+  color: var(--font-color-light);
 }
 
 .btn-primary:hover {
@@ -313,7 +339,7 @@
 
 .btn-secondary {
   background: var(--color-bg);
-  color: var(--color-text-dark);
+  color: var(--font-color-dark);
   border: var(--border-width) solid var(--color-border-light);
 }
 
@@ -342,7 +368,7 @@
 .footer-text {
   margin: 0;
   font-size: var(--font-size-regular);
-  color: var(--color-text-dark);
+  color: var(--font-color-dark);
   line-height: 1.5;
 }
 
@@ -355,13 +381,13 @@
   }
 
   #brand-name {
-    font-size: 24px;
+    font-size: var(--font-size-header);
   }
 
   .btn-primary,
   .btn-secondary {
     height: 40px;
-    font-size: 13px;
+    font-size: var(--font-size-regular)
   }
 
   .login-options {

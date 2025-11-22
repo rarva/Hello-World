@@ -8,9 +8,9 @@
   height: 40px;
   border-radius: 50%;
   margin: 0;
-  background: var(--color-secondary);
+  background: var(--color-primary);
   cursor: pointer;
-  color: white;
+
 }
 
 #toolbar-avatar img {
@@ -37,7 +37,7 @@
   display: flex;
   align-items: center;
   background-color: var(--color-bg);
-  font-family: Verdana, sans-serif;
+  font-family: var(--font-stack)    ;
   height: var(--toolbar-height);
   width: 100%;
   overflow: visible;
@@ -68,7 +68,7 @@
   min-width: 100px;
   margin: 0 8px;
   padding: 0 18px;
-  background-color: var(--color-text-light);
+  background-color: var(--font-color-light);
   color: var(--color-primary);
   text-align: center;
   text-decoration: none;
@@ -80,7 +80,7 @@
 
 #toolbar-links a:hover {
   background-color: var(--color-secondary);
-  color: var(--color-text-light);
+  color: var(--font-color-light);
 
 }
 

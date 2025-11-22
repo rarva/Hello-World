@@ -1,24 +1,24 @@
 {
   "toolbar.home": { 
-    "en": "Home", 
-    "pt": "Início", 
-    "de": "Startseite", 
-    "fr": "Accueil", 
-    "it": "Home" 
+    "en": "Item 1",
+    "pt": "Item 1",
+    "de": "Item 1",
+    "fr": "Item 1",
+    "it": "Item 1"
   },
   "toolbar.about": { 
-    "en": "About", 
-    "pt": "Sobre", 
-    "de": "Über", 
-    "fr": "À propos", 
-    "it": "Informazioni" 
+    "en": "Item 2",
+    "pt": "Item 2",
+    "de": "Item 2",
+    "fr": "Item 2",
+    "it": "Item 2"
   },
   "toolbar.contact": { 
-    "en": "Contact", 
-    "pt": "Contacto", 
-    "de": "Kontakt", 
-    "fr": "Contact", 
-    "it": "Contatto" 
+    "en": "Item 3",
+    "pt": "Item 3",
+    "de": "Item 3",
+    "fr": "Item 3",
+    "it": "Item 3"
   },
   "toolbar.tools": { 
     "en": "Tools", 
@@ -112,7 +112,7 @@
     "it": "Password dimenticata?" 
   },
   "login.first_login": { 
-    "en": "First login?", 
+    "en": "Forgot password?", 
     "pt": "Primeiro acesso?", 
     "de": "Erste Anmeldung?", 
     "fr": "Première connexion?", 
@@ -301,6 +301,14 @@
     "it": "Esci" 
   },
 
+  "avatar.placeholder": {
+    "en": "?",
+    "pt": "?",
+    "de": "?",
+    "fr": "?",
+    "it": "?"
+  },
+
   "onboarding.name.title": {
     "en": "Your Name",
     "pt": "Seu Nome",
@@ -391,6 +399,41 @@
     "de": "Datei wählen",
     "fr": "Choisir un fichier",
     "it": "Scegli file"
+  },
+  "toolbar.load_failed": {
+    "en": "Toolbar failed to load.",
+    "pt": "Falha ao carregar a barra de ferramentas.",
+    "de": "Fehler beim Laden der Symbolleiste.",
+    "fr": "Échec du chargement de la barre d'outils.",
+    "it": "Errore nel caricamento della barra degli strumenti."
+  },
+  "footer.load_failed": {
+    "en": "Footer failed to load.",
+    "pt": "Falha ao carregar o rodapé.",
+    "de": "Fehler beim Laden der Fußzeile.",
+    "fr": "Échec du chargement du pied de page.",
+    "it": "Errore nel caricamento del piè di pagina."
+  },
+  "onboarding.load_failed": {
+    "en": "Failed to load onboarding form",
+    "pt": "Falha ao carregar o formulário de integração",
+    "de": "Fehler beim Laden des Onboarding-Formulars",
+    "fr": "Échec du chargement du formulaire d'intégration",
+    "it": "Errore nel caricamento del modulo di onboarding"
+  },
+  "login.load_failed": {
+    "en": "Failed to load login page",
+    "pt": "Falha ao carregar a página de login",
+    "de": "Fehler beim Laden der Login-Seite",
+    "fr": "Échec du chargement de la page de connexion",
+    "it": "Errore nel caricamento della pagina di accesso"
+  },
+  "home.load_failed": {
+    "en": "Failed to load {view}.",
+    "pt": "Falha ao carregar {view}.",
+    "de": "Fehler beim Laden von {view}.",
+    "fr": "Échec du chargement de {view}.",
+    "it": "Errore nel caricamento di {view}."
   },
   "onboarding.error.firstNameRequired": {
     "en": "First name is required",
