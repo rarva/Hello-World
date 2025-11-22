@@ -45,7 +45,12 @@ function loadHomeView(viewName) {
     })
     .catch(err => {
       console.error(`Failed to load home view: ${viewName}`, err);
-      homeContainer.innerHTML = `<div style="color:red">Failed to load ${viewName}.</div>`;
+      if (typeof getString === 'function') {
+        const tpl = getString('home.load_failed');
+        homeContainer.innerHTML = `<div style="color: var(--color-error)">${tpl.replace('{view}', viewName)}</div>`;
+      } else {
+        homeContainer.innerHTML = `<div style="color: var(--color-error)">Failed to load ${viewName}.</div>`;
+      }
     });
 }
 

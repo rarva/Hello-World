@@ -87,7 +87,7 @@ function setupAvatarUpload(placeholderId, fileInputId) {
   avatarPlaceholder.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    avatarPlaceholder.style.background = 'white';
+    avatarPlaceholder.style.background = 'var(--color-bg)';
     avatarPlaceholder.style.borderColor = 'var(--color-secondary)';
     avatarPlaceholder.style.borderStyle = 'dashed';
     avatarPlaceholder.style.borderWidth = '3px';
@@ -102,7 +102,7 @@ function setupAvatarUpload(placeholderId, fileInputId) {
     if (e.target === avatarPlaceholder) {
       e.preventDefault();
       e.stopPropagation();
-      avatarPlaceholder.style.background = '#d8d8d8';
+      avatarPlaceholder.style.background = 'var(--color-bg)';
       avatarPlaceholder.style.borderColor = 'var(--color-border-dark)';
       avatarPlaceholder.style.borderStyle = 'solid';
       avatarPlaceholder.style.borderWidth = 'var(--border-width)';
@@ -117,7 +117,7 @@ function setupAvatarUpload(placeholderId, fileInputId) {
   avatarPlaceholder.addEventListener('drop', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    avatarPlaceholder.style.background = '#d8d8d8';
+    avatarPlaceholder.style.background = 'var(--color-bg)';
     avatarPlaceholder.style.borderColor = 'var(--color-border-dark)';
     avatarPlaceholder.style.borderStyle = 'solid';
     avatarPlaceholder.style.borderWidth = 'var(--border-width)';
@@ -146,6 +146,24 @@ function setupAvatarUpload(placeholderId, fileInputId) {
   });
 }
 
+// Global avatar store: central place to keep the currently loaded avatar image URL/data
+if (!window.AvatarStore) {
+  window.AvatarStore = {
+    imageUrl: null,
+    setImage(url) {
+      this.imageUrl = url;
+      try {
+        window.dispatchEvent(new CustomEvent('avatarUpdated', { detail: { avatarUrl: url } }));
+      } catch (e) {
+        // ignore
+      }
+    },
+    getImage() {
+      return this.imageUrl;
+    }
+  };
+}
+
 /**
  * Generate initials from first and last name
  * Returns initials like "JD" for John Doe
@@ -170,19 +188,18 @@ function createInitialsAvatar(firstName, lastName, size = 220) {
   
   // Get color based on initials (deterministic, same initials = same color)
   const initials = getInitials(firstName, lastName);
-  const colorIndex = (initials.charCodeAt(0) + initials.charCodeAt(1)) % 10;
-  const colors = [
-    '#e53e38',   // Red
-    '#ff8e1d',   // Orange
-    '#FFD93D',   // Yellow
-    '#9ACD32',   // Green
-    '#4D96FF',   // Blue
-    '#7B68EE',   // Purple
-    '#FF6B9D',   // Pink
-    '#bb713c',   // Dark Orange
-    '#00D9FF',   // Cyan
-    '#3cb39f'    // Teal
-  ];
+  const firstCode = initials.charCodeAt(0) || 0;
+  const secondCode = initials.charCodeAt(1) || 0;
+  const colorIndex = Math.abs((firstCode + secondCode) % 10);
+
+  // Read avatar palette  global_styles CSS variables --avatar-color-0..9
+  const rootStyle = getComputedStyle(document.documentElement);
+  const colors = [];
+  for (let i = 0; i < 10; i++) {
+    const v = rootStyle.getPropertyValue(`--rainbow-color-${i}`).trim();
+    colors.push(v);
+  }
+
   const backgroundColor = colors[colorIndex];
   
   // Background circle
@@ -191,8 +208,14 @@ function createInitialsAvatar(firstName, lastName, size = 220) {
   ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
   ctx.fill();
   
-  // Text (initials)
-  ctx.fillStyle = 'white';
+  // Text (initials) - prefer CSS tokens and do not include hardcoded fallbacks
+  // (no hardcoded color literals in JS to satisfy the repo checks)
+  const textColor = (
+    rootStyle.getPropertyValue('--avatar-initials-text').trim() ||
+    rootStyle.getPropertyValue('--font-color-light').trim() ||
+    rootStyle.getPropertyValue('--font-color-bg').trim()
+  );
+  if (textColor) ctx.fillStyle = textColor;
   ctx.font = `bold ${size * 0.4}px Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';

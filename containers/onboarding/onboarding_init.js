@@ -30,8 +30,9 @@ async function initializeOnboarding() {
 
     console.log('Onboarding modal initialized');
   } catch (error) {
-    console.error('Error initializing onboarding:', error);
-    window.showOnboardingError?.('Failed to load onboarding form');
+     console.error('Error initializing onboarding:', error);
+     if (typeof getString === 'function') window.showOnboardingError?.(getString('onboarding.load_failed'));
+     else window.showOnboardingError?.('Failed to load onboarding form');
   }
 }
 
@@ -185,27 +186,51 @@ async function updateUserProfile(user, profileData) {
 
   if (error) throw new Error(error.message);
 }
+ 
 
-/**
- * Synchronize the toolbar avatar with the updated avatar.
- * @param {string} avatarUrl - The URL of the updated avatar.
- * @param {string} firstName - The user's first name.
- * @param {string} lastName - The user's last name.
- */
 function syncToolbarAvatar(avatarUrl, firstName, lastName) {
   const toolbarAvatar = document.getElementById('toolbar-avatar');
-  if (toolbarAvatar) {
+  if (!toolbarAvatar) return;
+
+  const applyAvatar = (url) => {
     toolbarAvatar.innerHTML = '';
-    if (avatarUrl) {
+    if (url) {
       const img = document.createElement('img');
-      img.src = avatarUrl;
-      img.alt = `${firstName} ${lastName}`;
+      img.src = url;
+      img.alt = `${firstName || ''} ${lastName || ''}`.trim();
       toolbarAvatar.appendChild(img);
+      toolbarAvatar.style.backgroundColor = '';
+      toolbarAvatar.style.color = '';
     } else {
-      toolbarAvatar.textContent = '?';
-      toolbarAvatar.style.backgroundColor = 'var(--color-secondary)';
-      toolbarAvatar.style.color = 'white';
+      if (typeof getString === 'function') {
+        toolbarAvatar.textContent = getString('avatar.placeholder');
+      } else {
+        toolbarAvatar.textContent = '';
+      }
+      toolbarAvatar.style.backgroundColor = 'var(--color-primary)';
+      toolbarAvatar.style.color = 'var(--font-color-light)';
     }
+  };
+
+  // Prefer explicit avatarUrl if provided
+  if (avatarUrl && window.AvatarStore && typeof window.AvatarStore.setImage === 'function') {
+    try { window.AvatarStore.setImage(avatarUrl); } catch (e) { /* ignore */ }
+    applyAvatar(avatarUrl);
+  } else {
+    // Fallback to AvatarStore if available
+    const storeImage = window.AvatarStore && typeof window.AvatarStore.getImage === 'function'
+      ? window.AvatarStore.getImage()
+      : null;
+    applyAvatar(storeImage);
+  }
+
+  // Subscribe to store updates once per toolbar element so avatar stays in sync
+  if (!toolbarAvatar.__avatarListener) {
+    toolbarAvatar.__avatarListener = (e) => {
+      const url = e && e.detail ? e.detail.avatarUrl : null;
+      applyAvatar(url);
+    };
+    window.addEventListener('avatarUpdated', toolbarAvatar.__avatarListener);
   }
 }
 
@@ -249,6 +274,11 @@ async function handleOnboardingSubmit(e) {
     if (!formData) return;
 
     const avatarUrl = await handleAvatarUpload(user, formData.firstName, formData.lastName);
+
+    // Populate global AvatarStore so other modules can use the avatar immediately
+    if (window.AvatarStore && typeof window.AvatarStore.setImage === 'function') {
+      try { window.AvatarStore.setImage(avatarUrl); } catch (e) { /* ignore */ }
+    }
 
     await updateUserProfile(user, {
       first_name: formData.firstName,

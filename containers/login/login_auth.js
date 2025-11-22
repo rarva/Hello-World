@@ -216,3 +216,51 @@ async function handleLogin(e) {
     }
   }
 }
+
+/**
+ * Handle logout for the app
+ * - Calls Supabase signOut when available
+ * - Clears client-side auth state and remembered email
+ * - Updates UI to logged-out state
+ */
+async function handleLogout() {
+  try {
+    // Call Supabase signOut if available
+    if (window.supabase && typeof window.supabase.auth?.signOut === 'function') {
+      await window.supabase.auth.signOut();
+    }
+
+    // Clear client state
+    window.currentUser = null;
+    window.userNeedsOnboarding = false;
+
+    try {
+      localStorage.removeItem('rememberedEmail');
+    } catch (e) {
+      // ignore storage errors
+    }
+
+    // Update UI
+    if (typeof setUiForAuthState === 'function') {
+      setUiForAuthState(false);
+    } else {
+      // fallback: attempt to reload to a logged-out state
+      try {
+        if (typeof loadView === 'function') loadView('login');
+      } catch (e) {
+        // final fallback: reload the page
+        window.location.reload();
+      }
+    }
+  } catch (err) {
+    console.error('Logout failed:', err);
+    if (typeof window.showGeneralMessage === 'function') {
+      window.showGeneralMessage(getString ? getString('profile.logout_failed') || 'Logout failed' : 'Logout failed');
+    }
+    // rethrow so callers can surface error if needed
+    throw err;
+  }
+}
+
+// Export to window so profile component can call it
+window.handleLogout = handleLogout;

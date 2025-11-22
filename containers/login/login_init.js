@@ -40,7 +40,8 @@ function initLoginContainer() {
       initLogin();
     })
     .catch(err => {
-      window.showFieldError?.('Failed to load login page');
+      if (typeof getString === 'function') window.showFieldError?.(getString('login.load_failed'));
+      else window.showFieldError?.('Failed to load login page');
       console.error('Failed to load login:', err);
     });
 }
@@ -65,7 +66,13 @@ function loadView(viewName) {
       })
       .catch(err => {
         console.error('Failed to load view:', err);
-        homeContainer.innerHTML = `<div style="color:red">Failed to load ${viewName}.</div>`;
+        // Use translated message and show via showHomeError
+        if (typeof getString === 'function') {
+          const tpl = getString('home.load_failed');
+          homeContainer.innerHTML = `<div style="color: var(--color-error)">${tpl.replace('{view}', viewName)}</div>`;
+        } else {
+          homeContainer.innerHTML = `<div style="color: var(--color-error)">Failed to load ${viewName}.</div>`;
+        }
         homeContainer.classList.add('visible');
       });
   }
