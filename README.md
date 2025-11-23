@@ -1,24 +1,22 @@
 # Hello-World
-Rhomberg OrgChart Admin - Multi-language authentication system with Supabase backend
+Rhomberg OrgChart Admin — multi-language authentication + onboarding demo (Supabase backend)
 
-Company colors: #DA162A (Dark Red), #EB8318 (Orange), #010101 (Black)
+Company design tokens: `--color-primary: #DA162A`, `--color-button: #EB8318`, `--color-black: #010101`
 
-## Current Version: v1.0.1-onboarding-complete (Latest: Avatar + Profile Onboarding)
+## Current Version: v1.0.2-manager-validation (Latest: Manager Validation + Emails)
 
 ### Development Status: ✅ STABLE
 Complete authentication system with post-signup onboarding, avatar management, and profile data collection fully implemented and tested.
 
-### Latest Update (Current Release - v1.0.1)
-**Avatar Upload & Profile Onboarding System**
-- **Avatar component:** Independent reusable component with drag-and-drop file selection
-- **Image compression:** Canvas-based compression to 220×220px PNG (30-80KB typical)
-- **Supabase Storage:** Public file hosting with automatic URL retrieval
-- **Initials fallback:** Deterministic 10-color palette for auto-generated avatars
-- **Onboarding modal:** Post-signup profile completion (first name, last name, manager email)
-- **Profile persistence:** All user data saved to `profiles` table with avatar URL
-- **Two-element button UI:** Avatar plus button expands to CHOOSE FILE (smooth UX)
-- **Clean error handling:** Specific messages for missing fields, failed uploads, database errors
-- **Login/onboarding flow:** Seamless transition with proper modal layering
+### Latest Update (Current Release - v1.0.2)
+**Manager Validation & Email Notifications**
+- **Manager validation requests:** Token-based manager approval flow (single-use, 7-day expiry)
+- **Email subsystem:** `emails/` scaffold with SendGrid/Mailtrap providers and server-side helper
+- **Edge functions:** Supabase Edge Function stubs for creating requests, token validation redirect, and approval finalize
+- **Templates:** `manager_notification` (email to manager with validate link) and `manager_validated` (email to requester)
+- **Frontend wiring:** Login/signup accepts `validateRequestId` and `lockedEmail` query params to prefill and lock manager email during validation
+- **Security:** Tokens stored as SHA-256 hashes in DB; approve endpoint verifies `auth.user.email === manager_email`
+
 
 ### Previous Version (v1.0.0-auth-system)
 - **Code restructuring:** Standardized file naming convention (load_*.js → *_init.js)
@@ -99,33 +97,40 @@ Complete authentication system with post-signup onboarding, avatar management, a
 
 ---
 
-## Quick Start
+## Quick Start (reproduce this snapshot)
 
-### 1. Clone & Setup
-```bash
+1. Clone and checkout the snapshot branch:
+
+```powershell
 git clone https://github.com/rarva/Hello-World.git
 cd Hello-World
-git checkout v1.0.1
+git checkout backup/v1.0.1-onboarding-2025-11-22
 ```
 
-### 2. Configure Supabase
-Create `config.js`:
+2. Create a local `config.js` for development (DO NOT commit):
+
 ```javascript
 window.SUPABASE_URL = 'https://your-project.supabase.co';
 window.SUPABASE_ANON_KEY = 'your-anon-key';
 ```
 
-### 3. Run Locally
-```bash
+3. Start a static server and open the app:
+
+```powershell
 python -m http.server 8000
-# Visit http://localhost:8000
+# Open http://localhost:8000 in your browser
 ```
 
-### 4. Test Features
-- **Sign up:** Register with email/password → language auto-saved
-- **Login:** Email and remember-me checkbox work
-- **Session:** Close tab → reopen → stay logged in
-- **Languages:** Switch language → immediately applied → persisted to profile
+4. Optional: run uniformity checks (recommended during refactors)
+
+```powershell
+# Detached background job (PowerShell):
+Start-Job -ScriptBlock { node .\uniformity_checks\run_all_checks.js }
+
+# Synchronous run for CI or pre-commit checks:
+node .\uniformity_checks\run_all_checks.js --sync
+# Results written to .\uniformity_checks\check-output.txt
+```
 
 ---
 
@@ -269,7 +274,7 @@ python -m http.server 8000
 
 ---
 
-**Version:** v1.0.1-onboarding-complete | **Updated:** November 20, 2025
+**Version:** v1.0.2-manager-validation | **Updated:** November 23, 2025
 
 ---
 

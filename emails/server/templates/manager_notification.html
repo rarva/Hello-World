@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Manager validation request</title>
+  </head>
+  <body>
+    <p>Hello {{managerName}},</p>
+    <p>{{requesterName}} ({{requesterEmail}}) has requested your approval for an action in OrgChart TestApp.</p>
+    <p>To review the request, click the link below. The email is locked to {{managerEmail}} — you must sign in or create an account using that address.</p>
+    <p><a href="{{validateLink}}">Review and validate request</a></p>
+    <p>This link expires on {{expiresAt}}.</p>
+    <p>Thank you,<br/>OrgChart TestApp Admin</p>
+  </body>
+</html>
+<!doctype html>
+<html>
+  <body>
+    <p>Hi,</p>
+    <p>User <strong>{{userName}}</strong> (&lt;{{userEmail}}&gt;) has joined the org and listed you as their manager.</p>
+    <p>Please review their profile when you have a moment.</p>
+    <p>— The Team</p>
+  </body>
+</html>
