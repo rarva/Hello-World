@@ -6,3 +6,4 @@ COPILOT_GUIDE.txt
 
 # Local uniformity/lint check scripts (developer-only)
 uniformity_checks/
+.env
