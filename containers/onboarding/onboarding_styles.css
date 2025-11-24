@@ -12,7 +12,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: var(--color-bg);
+  background-color: var(--color-bg);
   border-radius: var(--radius);
   border: var(--border-width) solid var(--color-primary);
   max-width: 450px;

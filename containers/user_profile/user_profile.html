@@ -1,0 +1,66 @@
+<div id="user-profile" class="user-profile">
+  <div class="user-profile-inner">
+    <header class="user-profile-header">
+      <h1 data-i18n="profile.editProfile">User Profile</h1>
+    </header>
+
+    <section class="user-profile-body">
+      <div class="user-profile-column">
+        <div id="profile-avatar-row" class="profile-avatar-row">
+          <!-- Injected avatar component will be placed here to avoid duplicating markup -->
+          <div id="avatar-slot"></div>
+        </div>
+
+        <form id="user-profile-form" class="user-profile-form" autocomplete="off" novalidate role="form" aria-describedby="user-profile-errors">
+          <label for="email-static" data-i18n="profile.email">Email</label>
+          <div id="email-static" class="profile-email" aria-live="polite"></div>
+
+          <label for="full_name" data-i18n="profile.fullName">Full Name</label>
+          <input id="full_name" name="full_name" type="text" />
+
+          <label for="language" data-i18n="profile.language">Language</label>
+          <select id="language" name="language">
+            <option value="en">English</option>
+            <option value="pt">Português</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+          </select>
+          <label for="first_name" data-i18n="profile.firstName">First Name</label>
+          <input id="first_name" name="first_name" type="text" required aria-required="true" />
+
+          <label for="last_name" data-i18n="profile.lastName">Last Name</label>
+          <input id="last_name" name="last_name" type="text" required aria-required="true" />
+
+          <label for="reports_to_email" data-i18n="onboarding.manager.email">Reports to</label>
+          <input id="reports_to_email" name="reports_to_email" type="email" />
+
+          <label for="date_hired" data-i18n="profile.dateHired">Date Hired</label>
+          <div class="date-field">
+            <input id="date_hired" name="date_hired" type="date" />
+            <span class="date-icon" aria-hidden="true"></span>
+          </div>
+
+          <label for="department" data-i18n="profile.department">Department</label>
+          <input id="department" name="department" type="text" />
+
+          <label for="phone" data-i18n="profile.phone">Phone</label>
+          <input id="phone" name="phone" type="text" />
+
+          <label for="birthdate" data-i18n="profile.birthdate">Birthdate</label>
+          <div class="date-field">
+            <input id="birthdate" name="birthdate" type="date" />
+            <span class="date-icon" aria-hidden="true"></span>
+          </div>
+          <label for="role" data-i18n="profile.role">Role</label>
+          <input id="role" name="role" type="text" />
+          <div id="user-profile-errors" class="user-profile-errors" aria-live="polite" role="status"></div>
+          <div class="user-profile-actions">
+            <button id="user-profile-save" class="btn btn-primary" type="button" data-i18n="profile.save">Save Changes</button>
+            <button id="user-profile-cancel" class="btn btn-primary btn-cancel" type="button" data-i18n="profile.cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>

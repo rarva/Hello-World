@@ -95,6 +95,11 @@ function setLanguage(lang) {
   if (SUPPORTED_LANGUAGES.includes(lang)) {
     currentLanguage = lang;
     localStorage.setItem('language', lang);
+    try {
+      window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
+    } catch (e) {
+      console.warn('languageChanged event dispatch failed', e);
+    }
   }
 }
 
@@ -115,9 +120,26 @@ function getLanguage() {
  * @param {string} profileLanguage - Language code from database
  */
 function updateLanguageFromProfile(profileLanguage) {
+  // If the user explicitly chose a language during this session (e.g. via
+  // the login language selector), prefer the user's choice and do not
+  // overwrite it with the stored profile language.
+  try {
+    if (localStorage.getItem('language_chosen_by_user') === '1') {
+      console.log('Profile language present but user chose language in UI; keeping user choice');
+      return;
+    }
+  } catch (e) {
+    // ignore localStorage errors and fall back to normal behavior
+  }
+
   if (profileLanguage && SUPPORTED_LANGUAGES.includes(profileLanguage)) {
     currentLanguage = profileLanguage;
     localStorage.setItem('language', profileLanguage);
     console.log('Updated language from profile:', profileLanguage);
+    try {
+      window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang: profileLanguage } }));
+    } catch (e) {
+      console.warn('languageChanged event dispatch failed', e);
+    }
   }
 }

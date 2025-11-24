@@ -27,6 +27,26 @@
     "fr": "Outils", 
     "it": "Strumenti" 
   },
+  "view1": { "en": "View 1", "pt": "Visualizar 1", "de": "Ansicht 1", "fr": "Vue 1", "it": "Vista 1" },
+  "view2": { "en": "View 2", "pt": "Visualizar 2", "de": "Ansicht 2", "fr": "Vue 2", "it": "Vista 2" },
+  "view3": { "en": "View 3", "pt": "Visualizar 3", "de": "Ansicht 3", "fr": "Vue 3", "it": "Vista 3" },
+  "view4": { "en": "View 4", "pt": "Visualizar 4", "de": "Ansicht 4", "fr": "Vue 4", "it": "Vista 4" },
+  "view5": { "en": "View 5", "pt": "Visualizar 5", "de": "Ansicht 5", "fr": "Vue 5", "it": "Vista 5" },
+  "view6": { "en": "View 6", "pt": "Visualizar 6", "de": "Ansicht 6", "fr": "Vue 6", "it": "Vista 6" },
+  "view7": { "en": "View 7", "pt": "Visualizar 7", "de": "Ansicht 7", "fr": "Vue 7", "it": "Vista 7" },
+  "view8": { "en": "View 8", "pt": "Visualizar 8", "de": "Ansicht 8", "fr": "Vue 8", "it": "Vista 8" },
+  "view9": { "en": "View 9", "pt": "Visualizar 9", "de": "Ansicht 9", "fr": "Vue 9", "it": "Vista 9" },
+  "view10": { "en": "View 10", "pt": "Visualizar 10", "de": "Ansicht 10", "fr": "Vue 10", "it": "Vista 10" },
+  "view 1": { "en": "View 1", "pt": "Visualizar 1", "de": "Ansicht 1", "fr": "Vue 1", "it": "Vista 1" },
+  "view 2": { "en": "View 2", "pt": "Visualizar 2", "de": "Ansicht 2", "fr": "Vue 2", "it": "Vista 2" },
+  "view 3": { "en": "View 3", "pt": "Visualizar 3", "de": "Ansicht 3", "fr": "Vue 3", "it": "Vista 3" },
+  "view 4": { "en": "View 4", "pt": "Visualizar 4", "de": "Ansicht 4", "fr": "Vue 4", "it": "Vista 4" },
+  "view 5": { "en": "View 5", "pt": "Visualizar 5", "de": "Ansicht 5", "fr": "Vue 5", "it": "Vista 5" },
+  "view 6": { "en": "View 6", "pt": "Visualizar 6", "de": "Ansicht 6", "fr": "Vue 6", "it": "Vista 6" },
+  "view 7": { "en": "View 7", "pt": "Visualizar 7", "de": "Ansicht 7", "fr": "Vue 7", "it": "Vista 7" },
+  "view 8": { "en": "View 8", "pt": "Visualizar 8", "de": "Ansicht 8", "fr": "Vue 8", "it": "Vista 8" },
+  "view 9": { "en": "View 9", "pt": "Visualizar 9", "de": "Ansicht 9", "fr": "Vue 9", "it": "Vista 9" },
+  "view 10": { "en": "View 10", "pt": "Visualizar 10", "de": "Ansicht 10", "fr": "Vue 10", "it": "Vista 10" },
   "footer.copyright": { 
     "en": "All rights reserved", 
     "pt": "Todos os direitos reservados", 
@@ -512,6 +532,34 @@
     "fr": "Email",
     "it": "Email"
   },
+  "profile.fullName": {
+    "en": "Full Name",
+    "pt": "Nome Completo",
+    "de": "Vollständiger Name",
+    "fr": "Nom complet",
+    "it": "Nome completo"
+  },
+  "profile.language": {
+    "en": "Language",
+    "pt": "Idioma",
+    "de": "Sprache",
+    "fr": "Langue",
+    "it": "Lingua"
+  },
+  "profile.dateHired": {
+    "en": "Date Hired",
+    "pt": "Data de contratação",
+    "de": "Einstellungsdatum",
+    "fr": "Date d'embauche",
+    "it": "Data assunzione"
+  },
+  "profile.birthdate": {
+    "en": "Birthdate",
+    "pt": "Data de nascimento",
+    "de": "Geburtsdatum",
+    "fr": "Date de naissance",
+    "it": "Data di nascita"
+  },
   "profile.save": {
     "en": "Save Changes",
     "pt": "Guardar Alterações",
@@ -539,5 +587,34 @@
     "de": "Fehler beim Speichern des Profils",
     "fr": "Échec de l'enregistrement du profil",
     "it": "Errore nel salvataggio del profilo"
+  }
+  ,
+  "profile.company": {
+    "en": "Company",
+    "pt": "Empresa",
+    "de": "Firma",
+    "fr": "Entreprise",
+    "it": "Azienda"
+  },
+  "profile.department": {
+    "en": "Department",
+    "pt": "Departamento",
+    "de": "Abteilung",
+    "fr": "Département",
+    "it": "Dipartimento"
+  },
+  "profile.phone": {
+    "en": "Phone",
+    "pt": "Telefone",
+    "de": "Telefon",
+    "fr": "Téléphone",
+    "it": "Telefono"
+  },
+  "profile.bio": {
+    "en": "Bio",
+    "pt": "Bio",
+    "de": "Bio",
+    "fr": "Bio",
+    "it": "Bio"
   }
 }

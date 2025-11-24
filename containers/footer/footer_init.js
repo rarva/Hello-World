@@ -9,17 +9,24 @@
 function initFooterContainer() {
   fetch('containers/footer/footer.html')
     .then(res => res.text())
-    .then(html => {
+    .then(async html => {
       const footerContainer = document.getElementById('footer-container');
       footerContainer.innerHTML = html;
       
-      // Load footer styles
-      const style = document.createElement('link');
-      style.rel = 'stylesheet';
-      style.href = 'containers/footer/footer_styles.css';
-      document.head.appendChild(style);
-      
-      // Initialize footer after HTML is present
+      // Load footer styles and wait to avoid FOUC
+      try {
+        if (window.loadStylesheetSafe) await window.loadStylesheetSafe('containers/footer/footer_styles.css', 'footer-styles');
+        else {
+          const style = document.createElement('link');
+          style.rel = 'stylesheet';
+          style.href = 'containers/footer/footer_styles.css';
+          document.head.appendChild(style);
+        }
+      } catch (e) {
+        console.warn('Footer stylesheet failed to load safely', e);
+      }
+
+      // Initialize footer after HTML and styles are present
       initFooter();
     })
     .catch(err => {
@@ -48,6 +55,13 @@ async function initFooter() {
   }
   
 }
+
+// Re-run footer string updates when language changes
+try {
+  window.addEventListener('languageChanged', () => {
+    try { initFooter(); } catch (e) { console.warn('initFooter failed on languageChanged', e); }
+  });
+} catch (e) { console.warn('Failed to attach languageChanged listener in footer', e); }
 
 /**
  * Handle logout

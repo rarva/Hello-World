@@ -9,17 +9,21 @@
 function initHomeContainer() {
   fetch('containers/home/home.html')
     .then(res => res.text())
-    .then(html => {
+    .then(async html => {
       const homeContainer = document.getElementById('home-container');
       homeContainer.innerHTML = html;
-      
-      // Load home styles
-      const style = document.createElement('link');
-      style.rel = 'stylesheet';
-      style.href = 'containers/home/home_styles.css';
-      document.head.appendChild(style);
-      
-      // Initialize home after HTML is present
+
+      // Load home styles and wait to avoid FOUC
+      if (window.loadStylesheetSafe) {
+        await window.loadStylesheetSafe('containers/home/home_styles.css', 'home-styles');
+      } else {
+        const style = document.createElement('link');
+        style.rel = 'stylesheet';
+        style.href = 'containers/home/home_styles.css';
+        document.head.appendChild(style);
+      }
+
+      // Initialize home after HTML and styles are present
       initHome();
     })
     .catch(err => {

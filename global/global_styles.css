@@ -4,12 +4,29 @@
 }
 
 html, body {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  align-content: stretch;
   margin: 0;
   padding: 0;
   height: 100vh;
+  width: 100vw;
   min-width: 640px;
   font-family: var(--font-stack);
   overflow: hidden;
+  background-color: salmon;
+  
+}
+
+/* Remove browser/user-agent default margins/padding on headings so
+   each container controls spacing explicitly. This prevents default
+   H1/H2 margins from creating unexpected gaps (e.g. in headers). */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  padding: 0;
 }
 
 /* Ensure form controls inherit the same app font stack and use consistent smoothing */
@@ -20,12 +37,14 @@ input, button, select, textarea {
 }
 
 #main-container {
-  width: 100%;
-  height: 100vh;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
+  align-self: stretch;
+  min-height: 0; /* allow children to scroll when using flex */
   overflow: hidden;
-  background-color: var(--color-bg);
+  background-color:#7B68EE;
+  z-index: 1;
 }
 
 /* ===== CONTAINER STYLES ===== */
@@ -33,25 +52,26 @@ input, button, select, textarea {
   flex: 1;
   width: 100%;
   display: none;
+  background-color: var(--color-bg);
   align-items: flex-start;
   justify-content: center;
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 10000;
-  scrollbar-width: var(--scrollbar-width-firefox);
-  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
+/* Toolbar container: hidden by default, shown when `.visible` is applied by JS */
 #toolbar-container {
-  width: 100%;
   display: none;
-  flex-shrink: 0;
-  z-index: 100;
+  width: 100%;
+}
+#toolbar-container.visible {
+  display: block;
 }
 
-#toolbar-container.visible {
-  display: flex;
-}
+
+
+
 
 #home-container {
   flex: 1;
@@ -60,13 +80,19 @@ input, button, select, textarea {
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 50;
-  scrollbar-width: var(--scrollbar-width-firefox);
-  scrollbar-color: var(--color-scrollbar) transparent;
+  min-height: 0;
 }
+
+
 
 #home-container.visible {
   display: flex;
 }
+
+/* Temporarily force home view hidden until it's used in the app. This
+   prevents the home container from appearing while developing other
+   containers. Remove this rule when the home view is ready to be shown. */
+#home-container { display: none !important; }
 
 #onboarding-container {
   flex: 1;
@@ -75,27 +101,21 @@ input, button, select, textarea {
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 75;
-  scrollbar-width: var(--scrollbar-width-firefox);
-  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
 #onboarding-container.visible {
   display: block;
 }
 
-#footer-container {
-  width: 100%;
-  display: flex;
-  flex-shrink: 0;
-  z-index: 99;
-}
+
 
 /* ===== COLOR PALETTE ===== */
 :root {
   --color-primary: #DA162A;        /* Dark Red */
   --color-secondary: #EB8318;      /* Secondary Orange */
   --color-button: #DA162A;         /* Button color (Orange) */
-  --color-black: #010101;          /* Black */
+  --color-black: #010101;  
+  --color-dim: #CCC;        /* Black */
 
   --color-bg-transparent: transparent;
   --color-bg: #f5f5f5;             /* Background color */
@@ -107,7 +127,6 @@ input, button, select, textarea {
   --color-border-dark: #333;       /* Dark border */
   --color-success: #0a8a4a;        /* Success green */
   --color-error: #d9443f;          /* Error red */
-  --toolbar-height: 100px;         /* change this to resize toolbar; buttons will stay half height */
   --radius: 10px;                  /* Global border radius */
   --border-width: 1.5px;           /* Global border thickness */
 
@@ -165,36 +184,101 @@ input, button, select, textarea {
   
 }
 
-/* Toolbar styles consolidated in toolbar/toolbar_styles.css */
 
-/* Scrollbar visuals for main app containers */
-#login-container::-webkit-scrollbar,
-#home-container::-webkit-scrollbar,
-#onboarding-container::-webkit-scrollbar {
-  width: var(--scrollbar-width);
-}
-
-#login-container::-webkit-scrollbar-track,
-#home-container::-webkit-scrollbar-track,
-#onboarding-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-#login-container::-webkit-scrollbar-thumb,
-#home-container::-webkit-scrollbar-thumb,
-#onboarding-container::-webkit-scrollbar-thumb {
-  background: var(--color-scrollbar);
-  border-radius: 4px;
-}
-
-#login-container::-webkit-scrollbar-thumb:hover,
-#home-container::-webkit-scrollbar-thumb:hover,
-#onboarding-container::-webkit-scrollbar-thumb:hover {
-  background: var(--color-scrollbar-hover);
-}
+/* Scrollbar visuals are centralized — prefer `.app-scrollbar` on scrollable elements.
+   Legacy per-container rules were removed to avoid duplication. Use the shared
+   `.app-scrollbar` class (defined below) or add the class at runtime. */
 
 
 /* Home view content */
 .home-content {
   padding: 20px;
 }
+
+/* ===== Datepicker Utilities =====
+   Reusable wrapper and icon for date inputs across the app.
+   Usage in HTML:
+     <div class="date-field">
+       <input type="date" class="date-input" />
+       <span class="date-icon" aria-hidden="true"></span>
+     </div>
+*/
+.date-field {
+  position: relative;
+  display: inline-block;
+  width: 220px;
+  height: 37px;
+  max-width: 100%;
+  border-radius: var(--radius);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border-dark);
+  box-sizing: border-box;
+  margin-bottom: 6px;
+}
+.date-field .date-input,
+.date-field input[type="date"] {
+ 
+  -webkit-appearance: textfield;
+  appearance: textfield;
+  background: transparent;
+  box-sizing: border-box;
+  border-radius: var(--radius);
+  border: none;
+  width: 218px;
+  height: 36px;
+  padding-left: 10px;
+  border-radius: var(--radius);
+
+
+}
+.date-field input[type="date"]::-webkit-clear-button,
+.date-field input[type="date"]::-webkit-inner-spin-button {
+  display: none;
+}
+.date-field input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none !important;
+  opacity: 0;
+  width: 0; height: 0;
+}
+.date-field .date-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--icon-size);
+  height: var(--icon-size);
+  pointer-events: auto;
+  cursor: pointer;
+  /* Use mask for consistent tinting across browsers that support it */
+  -webkit-mask: url('/assets/images/calendar_month.svg') no-repeat center;
+  mask: url('/assets/images/calendar_month.svg') no-repeat center;
+  -webkit-mask-size: var(--icon-size);
+  mask-size: var(--icon-size);
+  background-color: var(--color-secondary);
+}
+
+/* On small screens ensure the icon stays visible */
+@media (max-width: 420px) {
+  .date-field .date-icon { right: 6px; }
+}
+
+
+.date-field input[type="date"]::-moz-focus-inner { border: 0; }
+.date-field:focus-within {
+  border-color: var(--color-primary);
+  
+}
+/* Shared app scrollbar class: apply these styles by adding `app-scrollbar` to any scrollable element */
+.app-scrollbar {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scrollbar) transparent;
+}
+
+/* WebKit browsers */
+.app-scrollbar::-webkit-scrollbar { width: var(--scrollbar-width); height: var(--scrollbar-width); }
+.app-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.app-scrollbar::-webkit-scrollbar-thumb { background: var(--color-scrollbar); border-radius: 4px; }
+.app-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--color-scrollbar-hover); }
+/* Ensure legacy selectors do not duplicate visuals; `.app-scrollbar` is the single source of truth. */
+

@@ -1,0 +1,44 @@
+DEBUG LOGS - Temporary debug traces
+
+Files modified (temporary):
+- containers/user_profile/user_profile_init.js
+
+What I added:
+- console.log traces prefixed with "DEBUG: USER_PROFILE" at module load, template fetch, template injection, open/close calls, save start, and dispatched events/errors.
+
+Purpose:
+- These logs help trace whether the profile init module is loaded, whether the template is fetched and inserted into the DOM, whether the `openUserProfile()` entrypoint is invoked, and whether saving completes.
+
+How to remove these temporary logs later (recommended):
+1) If you use git, the easiest way is to discard the changes to these files:
+   git checkout -- containers/user_profile/user_profile_init.js
+   (Repeat for any other files if modified.)
+
+2) If you want to remove only the debug lines (PowerShell):
+   # WARNING: review files before running; this removes lines that contain the exact marker string
+   Get-ChildItem -Recurse -Filter *.js | ForEach-Object {
+     $path = $_.FullName
+     (Get-Content $path) | Where-Object { $_ -notmatch "DEBUG: USER_PROFILE" } | Set-Content $path
+   }
+
+3) Alternatively, restore from a clean commit or stash if you keep one.
+
+Notes:
+- I intentionally used a unique prefix ("DEBUG: USER_PROFILE") to make it straightforward to find and remove only the temporary logging lines.
+- If you'd like, I can add a simple script `scripts/clear-debug-logs.ps1` that runs the PowerShell removal above and commit it (and remove it once you clear logs). Tell me if you want that.
+
+Changes made on: 2025-11-24
+
+End of DEBUG_LOGS.txt
+
+Additional temporary logs added:
+- containers/user_menu/user_menu_init.js
+   - Added `DEBUG: USER_MENU` logs in the edit handler to trace invocation and whether `window.openUserProfile` is called.
+   - Added a debug report after attaching listeners that logs presence of `#profile-edit-btn`, `#profile-settings-btn`, and `#profile-logout-btn`.
+   - Added a delegated document click listener to detect clicks on `#profile-edit-btn` (helps when direct listeners fail).
+
+How to remove these extra logs:
+- Use `git checkout -- containers/user_menu/user_menu_init.js` to discard the change, or
+- Remove lines containing the exact marker `DEBUG: USER_MENU` using the PowerShell snippet in this file.
+
+End of additions (2025-11-24)

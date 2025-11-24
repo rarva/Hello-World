@@ -150,6 +150,77 @@ function handleAuthSuccess(user, profileData = null) {
       loadView('home');
     }
   }
+
+  // Prefetch avatar into memory (convert to data URL) to avoid extra network fetches
+  (async () => {
+    try {
+      // prefer avatar from provided profileData
+      let avatarUrl = profileData?.avatar_url || null;
+
+      // If not present, try to fetch it from profiles table
+      if (!avatarUrl && window.supabase && user?.id) {
+        try {
+          const { data: profileRow, error } = await window.supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', user.id)
+            .single();
+          if (!error && profileRow?.avatar_url) avatarUrl = profileRow.avatar_url;
+        } catch (e) {
+          console.warn('Failed to query profile.avatar_url during auth success', e);
+        }
+      }
+
+      if (avatarUrl) {
+        // Fetch image as blob with a short timeout, then convert to data URL
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 8000);
+          const resp = await fetch(avatarUrl, { signal: controller.signal, credentials: 'omit' });
+          clearTimeout(timeoutId);
+          if (resp && resp.ok) {
+            const blob = await resp.blob();
+            const dataUrl = await new Promise((resolve, reject) => {
+              try {
+                const fr = new FileReader();
+                fr.onload = () => resolve(fr.result);
+                fr.onerror = () => reject(new Error('Failed to convert blob to data URL'));
+                fr.readAsDataURL(blob);
+              } catch (e) { reject(e); }
+            });
+
+            if (dataUrl) {
+              try { console.log('Auth avatar prefetch: setting AvatarStore for user', user?.id, 'avatarUrl:', avatarUrl); } catch(e) {}
+              try {
+                try { console.log('AvatarStore.setImage called with prefetched data URL'); } catch(e) {}
+                if (window.AvatarStore && typeof window.AvatarStore.setImage === 'function') {
+                  window.AvatarStore.setImage(dataUrl);
+                } else {
+                  // Create a minimal AvatarStore if missing
+                  window.AvatarStore = window.AvatarStore || { imageUrl: null, setImage(url){ this.imageUrl = url; try{ window.dispatchEvent(new CustomEvent('avatarUpdated',{ detail:{ avatarUrl: url } })); }catch(e){} }, getImage(){ return this.imageUrl } };
+                  window.AvatarStore.setImage(dataUrl);
+                }
+
+                // Dispatch on document as well for modules listening there
+                try { document.dispatchEvent(new CustomEvent('avatarUpdated', { detail: { avatarUrl: dataUrl } })); } catch (e) { /* ignore */ }
+              } catch (e) {
+                console.warn('Failed to set AvatarStore with prefetched data URL', e);
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Prefetch avatar failed or timed out', e);
+          // Don't block UI; leave AvatarStore alone so consumers fallback
+        }
+      }
+    } catch (e) {
+      console.warn('Avatar prefetch unexpected error', e);
+    } finally {
+      // Mark that user data is loaded in memory and notify listeners
+      try { window.userDataReady = true; } catch (e) { /* ignore */ }
+      try { document.dispatchEvent(new CustomEvent('userDataReady')); } catch (e) { /* ignore */ }
+    }
+  })();
 }
 
 /**
@@ -157,6 +228,9 @@ function handleAuthSuccess(user, profileData = null) {
  */
 async function handleLogin(e) {
   if (e?.preventDefault) e.preventDefault();
+
+  // Mark that user data is not yet loaded while login is in progress
+  try { window.userDataReady = false; } catch (e) { /* ignore */ }
 
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
@@ -225,30 +299,127 @@ async function handleLogin(e) {
  */
 async function handleLogout() {
   try {
-    // Call Supabase signOut if available
-    if (window.supabase && typeof window.supabase.auth?.signOut === 'function') {
-      await window.supabase.auth.signOut();
+    // Use mouse cursor 'wait' and block interactions (no visible overlays)
+    try {
+      try { window.isLoggingOut = true; } catch (e) { /* ignore */ }
+      try { document.dispatchEvent(new CustomEvent('userLoggingOut')); } catch (e) { /* ignore */ }
+      try { document.body.setAttribute('data-blocked', 'true'); } catch (e) { /* ignore */ }
+
+      if (!document.getElementById('logout-cursor-style')) {
+        const style = document.createElement('style');
+        style.id = 'logout-cursor-style';
+        style.innerHTML = `
+          body[data-blocked="true"] { cursor: wait !important; }
+          body[data-blocked="true"] * { pointer-events: none !important; user-select: none !important; }
+        `;
+        document.head.appendChild(style);
+      }
+    } catch (e) {
+      console.warn('Failed to enable logout cursor block', e);
     }
 
-    // Clear client state
-    window.currentUser = null;
-    window.userNeedsOnboarding = false;
+    // Close and remove profile dropdown immediately
+    try {
+      const dropdown = document.getElementById('profile-dropdown');
+      if (dropdown) {
+        dropdown.classList.remove('visible');
+        try { dropdown.remove(); } catch (e) { /* ignore */ }
+      }
+    } catch (e) { /* ignore */ }
 
+    // Ensure persisted avatar is cleared and common avatar DOM nodes are reset
+    try {
+      try { localStorage.removeItem('avatar:image'); } catch (e) { /* ignore */ }
+
+      const preview = document.getElementById('avatar-preview');
+      if (preview) {
+        try { preview.src = ''; } catch (e) {}
+        try { preview.style.display = 'none'; } catch (e) {}
+      }
+
+      const profileImg = document.querySelector('#profile-avatar img');
+      if (profileImg && profileImg.parentNode) {
+        try { profileImg.parentNode.removeChild(profileImg); } catch (e) { /* ignore */ }
+      }
+
+      const toolbarImg = document.querySelector('#toolbar-avatar img');
+      if (toolbarImg && toolbarImg.parentNode) {
+        try { toolbarImg.parentNode.removeChild(toolbarImg); } catch (e) { /* ignore */ }
+      }
+    } catch (e) { /* ignore */ }
+
+    // Clear avatar image placeholder (do not disable the button)
+    try {
+      const toolbarAvatar = document.getElementById('toolbar-avatar');
+      if (toolbarAvatar) toolbarAvatar.innerHTML = '';
+      // Clear both persisted image and any transient preview so all
+      // consumers (toolbar, placeholders, onboarding) update.
+      if (window.AvatarStore) {
+        try { if (typeof window.AvatarStore.setPreview === 'function') window.AvatarStore.setPreview(null); } catch (e) { /* ignore */ }
+        try { if (typeof window.AvatarStore.setImage === 'function') window.AvatarStore.setImage(null); } catch (e) { /* ignore */ }
+      } else {
+        // Fallback: dispatch events so listeners update even without a store
+        try { window.dispatchEvent(new CustomEvent('avatarPreviewChanged', { detail: { avatarUrl: null } })); } catch (e) { /* ignore */ }
+        try { document.dispatchEvent(new CustomEvent('avatarPreviewChanged', { detail: { avatarUrl: null } })); } catch (e) { /* ignore */ }
+        try { window.dispatchEvent(new CustomEvent('avatarUpdated', { detail: { avatarUrl: null } })); } catch (e) { /* ignore */ }
+        try { document.dispatchEvent(new CustomEvent('avatarUpdated', { detail: { avatarUrl: null } })); } catch (e) { /* ignore */ }
+      }
+    } catch (e) { /* ignore */ }
+
+    // Perform server-side sign out while spinner is visible
+    try {
+      if (window.supabase && typeof window.supabase.auth?.signOut === 'function') {
+        await window.supabase.auth.signOut();
+      }
+    } catch (e) {
+      console.warn('Supabase signOut failed', e);
+    }
+
+    // Clear in-memory state
+    try {
+      window.currentUser = null;
+      window.userNeedsOnboarding = false;
+      try { window.userDataReady = false; } catch (e) { /* ignore */ }
+    } catch (e) { /* ignore */ }
+
+    // Clear persisted traces
     try {
       localStorage.removeItem('rememberedEmail');
-    } catch (e) {
-      // ignore storage errors
-    }
+      try { localStorage.removeItem('sb:token'); } catch (e) { /* ignore */ }
+      try { localStorage.removeItem('language_chosen_by_user'); } catch (e) { /* ignore */ }
+    } catch (e) { /* ignore */ }
 
-    // Update UI
+    // Wait a short moment to ensure cleanup completed
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    // Remove cursor-block and notify
+    try { document.body.removeAttribute('data-blocked'); } catch (e) { /* ignore */ }
+    try { const st = document.getElementById('logout-cursor-style'); if (st) st.remove(); } catch (e) { /* ignore */ }
+    try { document.dispatchEvent(new CustomEvent('userDataCleared')); } catch (e) { /* ignore */ }
+    try { window.isLoggingOut = false; } catch (e) { /* ignore */ }
+
+    // Now transition to logged-out UI
+    // Hide all direct children of the main app container so any mounted
+    // in-flow containers (home, onboarding, views, etc.) are hidden on logout.
+    try {
+      const main = document.getElementById('main-container');
+      if (main) {
+        Array.from(main.children).forEach(child => {
+          try {
+            // remove visible class and hide by display to ensure it's not interactive
+            if (child.classList) child.classList.remove('visible');
+            child.style.display = 'none';
+          } catch (e) { /* ignore per-child errors */ }
+        });
+      }
+    } catch (e) { /* ignore */ }
+
     if (typeof setUiForAuthState === 'function') {
       setUiForAuthState(false);
     } else {
-      // fallback: attempt to reload to a logged-out state
       try {
         if (typeof loadView === 'function') loadView('login');
       } catch (e) {
-        // final fallback: reload the page
         window.location.reload();
       }
     }
@@ -257,7 +428,6 @@ async function handleLogout() {
     if (typeof window.showGeneralMessage === 'function') {
       window.showGeneralMessage(getString ? getString('profile.logout_failed') || 'Logout failed' : 'Logout failed');
     }
-    // rethrow so callers can surface error if needed
     throw err;
   }
 }

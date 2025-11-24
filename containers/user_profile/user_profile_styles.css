@@ -1,0 +1,167 @@
+/* User profile page styles - follows onboarding pattern */
+
+/* ensure root participates in flex layout and body scrolls */
+.user-profile {
+  
+  display:flex; 
+  flex-direction:column; 
+  flex:1 1 auto; 
+  min-height:0; 
+}
+.user-profile.visible { display: flex; }
+
+
+.user-profile-inner { 
+  overflow:auto;
+  padding: 0; 
+  box-sizing: border-box; 
+  height: 100%; 
+  display:flex; 
+  flex-direction:column; 
+
+
+  }
+
+
+.user-profile-header {
+
+
+  font-size: var(--font-size-header, 15px);
+  background-color: var(--color-bg);
+color: var(--color-primary) ;
+}
+
+.user-profile-body {
+  flex:1 1 auto; 
+  min-height:0;
+background-color: var(--color-bg);
+}
+/*.user-profile-body { flex: 1; overflow:auto; }*/
+
+
+
+/* Apply padding to the inner content column so inputs keep distance from the scrollbar */
+.user-profile-column { 
+background-color: var(--color-bg);
+  width: 480px;
+ ; margin: 0 auto; display:flex; flex-direction:column; gap:12px; padding:24px; box-sizing:border-box; }
+.profile-avatar-row { 
+  display:flex; 
+  gap:12px; 
+  align-items:center; 
+background-color: var(--color-bg);
+}
+.user-profile-form label { 
+  display:block;
+   font-size:var(--font-size-regular) ;
+   margin-bottom:6px;
+    color:var(--font-color-dark);
+
+       
+  }
+
+.user-profile-form input[type="text"], 
+.user-profile-form input[type="email"], 
+.user-profile-form textarea, 
+.user-profile-form select {
+  padding: 10px;
+  font-size:var(--font-size-regular) ;
+  width: 100%;
+   background-color: var(--color-bg);
+  border-radius: var(--radius)    ;
+  border: 1px solid var(--color-border-dark);
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+/* Make the language combo match the date picker size while remaining responsive */
+.user-profile-column #language,
+.user-profile-column select[name="language"] {
+  display: inline-block;
+  width: 220px; /* same as .date-field default */
+  max-width: 100%;
+  height: 36px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  vertical-align: middle;
+  margin-bottom: 8px;
+}
+.user-profile-form input[type="text"]:focus,
+.user-profile-form input[type="email"]:focus,
+.user-profile-form textarea:focus,
+.user-profile-form select:focus,
+.user-profile-column .date-field input[type="date"]:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  /* subtle glow to match app focus motif */
+  /*box-shadow: 0 0 0 3px rgba(218,22,42,0.06);*/
+}
+.user-profile-errors { color:var(--color-error); min-height:20px; font-size:13px; }
+
+@media (max-width:600px) {
+  .avatar-placeholder { width:88px; height:88px; }
+}
+
+/* Button styles (match app primary button visuals so Save and Cancel look identical) */
+.btn {
+  height: 44px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-bold-heavy);
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 16px;
+}
+
+.btn-primary {
+  background: var(--color-button);
+  color: var(--font-color-light);
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-primary:active {
+  opacity: 0.85;
+}
+
+.user-profile-actions { display:flex; gap:16px; justify-content:flex-end; margin-top:8px; align-items:center; }
+
+/* Static email display (read-only) - scoped to user profile to avoid colliding with user-menu */
+.user-profile .profile-email {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  align-self: center;    /* center inside the column */
+  margin: 0  auto 8px;
+  padding: 10px;
+  padding-right: 50px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-dark);
+  box-sizing: border-box;
+  color: var(--font-color-dark);
+  background-color: var(--color-dim); /* or keep existing color */
+  min-height: 36px;
+  border-radius: var(--radius);
+
+  /* content handling */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Date inputs use the shared global .date-field/.date-icon styles.
+  Appearance handled in global styles; no local overrides required. */
+
+/* Disabled button appearance: dim and not-allowed cursor */
+.btn[disabled], .btn:disabled, .btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+

@@ -20,6 +20,11 @@ window.app = window.app || {
  */
 function loadStylesheet(href) {
   if (!document.querySelector(`link[href="${href}"]`)) {
+    if (window.loadStylesheetSafe) {
+      // fire-and-forget; callers can also use the Promise variant where appropriate
+      window.loadStylesheetSafe(href);
+      return;
+    }
     const style = document.createElement('link');
     style.rel = 'stylesheet';
     style.href = href;
@@ -33,11 +38,17 @@ function loadStylesheet(href) {
 function initLoginContainer() {
   fetch('containers/login/login.html')
     .then(res => res.text())
-    .then(html => {
+    .then(async html => {
       const loginContainer = document.getElementById('login-container');
       loginContainer.innerHTML = html;
-      loadStylesheet('containers/login/login_styles.css');
-      initLogin();
+      // Load styles and initialize after styles applied to avoid FOUC
+      if (window.loadStylesheetSafe) {
+        await window.loadStylesheetSafe('containers/login/login_styles.css', 'login-styles');
+        initLogin();
+      } else {
+        loadStylesheet('containers/login/login_styles.css');
+        initLogin();
+      }
     })
     .catch(err => {
       if (typeof getString === 'function') window.showFieldError?.(getString('login.load_failed'));
@@ -137,6 +148,7 @@ function setupLanguageSwitcher() {
   });
 
   langSelect.addEventListener('change', (e) => {
+    try { localStorage.setItem('language_chosen_by_user', '1'); } catch (err) { /* ignore */ }
     setLanguage(e.target.value);
     langSelect.style.display = 'none';
     location.reload();

@@ -9,17 +9,24 @@
 function initToolbarContainer() {
   fetch('containers/toolbar/toolbar.html')
     .then(res => res.text())
-    .then(html => {
+    .then(async html => {
       const toolbarContainer = document.getElementById('toolbar-container');
       toolbarContainer.innerHTML = html;
       
-      // Load toolbar styles
-      const style = document.createElement('link');
-      style.rel = 'stylesheet';
-      style.href = 'containers/toolbar/toolbar_styles.css';
-      document.head.appendChild(style);
-      
-      // Initialize toolbar after HTML is present
+      // Load toolbar styles (wait for them to avoid FOUC)
+      try {
+        if (window.loadStylesheetSafe) await window.loadStylesheetSafe('containers/toolbar/toolbar_styles.css', 'toolbar-styles');
+        else {
+          const style = document.createElement('link');
+          style.rel = 'stylesheet';
+          style.href = 'containers/toolbar/toolbar_styles.css';
+          document.head.appendChild(style);
+        }
+      } catch (e) {
+        console.warn('Toolbar stylesheet failed to load safely', e);
+      }
+
+      // Initialize toolbar after HTML and styles are present
       initToolbar();
     })
     .catch(err => {
@@ -46,6 +53,18 @@ function initToolbar() {
     renderToolbar();
     setupAvatarButton();
   }
+
+  // Re-render toolbar when language changes elsewhere in the app
+  try {
+    window.addEventListener('languageChanged', () => {
+      try {
+        // Re-run render to pick up new translations via getString()
+        renderToolbar();
+        // Re-ensure avatar button wiring in case DOM nodes were replaced
+        try { setupAvatarButton(); } catch (e) { /* ignore */ }
+      } catch (e) { console.warn('renderToolbar failed on languageChanged', e); }
+    });
+  } catch (e) { console.warn('Failed to attach languageChanged listener in toolbar', e); }
 }
 
 /**
@@ -59,14 +78,21 @@ function renderToolbar() {
   container.innerHTML = '';
 
   // Create navigation links for each toolbar item
-  const toolbarKeys = ['home', 'about', 'contact'];
+  // Added extra keys: projects, team, reports, settings, help
+  const toolbarKeys = ['view 1', 'view 2', 'view 3', 'view 4', 'view 5', 'view 6', 'view 7', 'view 8', 'view 10'];
   toolbarKeys.forEach(key => {
-    const toolbarKey = `toolbar.${key}`;
-    const text = typeof getString === 'function' ? getString(toolbarKey) : key;
+    // Use the key directly so callers can add translations as `"view1": {...}`
+    // in `language_strings.json` (per request: do not prepend 'toolbar.').
+    const text = typeof getString === 'function' ? getString(key) : key;
     if (text) {
       const a = document.createElement('a');
+      a.className = 'button_index';
       a.href = key + '.html';
-      a.textContent = text;
+      // place the visible label inside a span so text-overflow can work
+      const label = document.createElement('span');
+      label.className = 'button_label';
+      label.textContent = text;
+      a.appendChild(label);
       container.appendChild(a);
     }
   });
@@ -74,7 +100,10 @@ function renderToolbar() {
   // Add train SVG inline for full CSS control
   const trainContainer = document.querySelector('.toolbar-train');
   if (trainContainer) {
-    trainContainer.innerHTML = `
+    // Only insert the train SVG if it hasn't been added yet to avoid
+    // removing other elements (like the avatar button) or duplicating the SVG
+    if (!trainContainer.querySelector('.inline-train-svg')) {
+      trainContainer.insertAdjacentHTML('afterbegin', `
       <svg class="inline-train-svg" viewBox="0 0 557 281" xmlns="http://www.w3.org/2000/svg" width="557" height="281">
         <g id="Background">
           <g>
@@ -86,8 +115,14 @@ function renderToolbar() {
         </g>
         <g id="Layer_1"></g>
       </svg>
-    `;
+    `);
+    }
   }
+  // After rendering links, ensure the links container has a pixel min-width
+  // so it won't shrink past the buttons' minimum widths. This helps enforce
+  // the visual requirement that when buttons reach their min (50px)
+  // the parent stops shrinking further.
+  if (typeof ensureToolbarMinWidth === 'function') ensureToolbarMinWidth();
 }
 
 /**
@@ -133,30 +168,153 @@ function setupAvatarButton() {
   // Display user avatar
   displayToolbarAvatar();
 
-  // Add click event to open profile modal
-    avatarBtn.addEventListener('click', async (e) => {
+  // Add click event to open profile modal (ignore when user data not loaded)
+  avatarBtn.addEventListener('click', async (e) => {
+    // If no user data in memory yet, or no avatar image loaded, ignore the click
+    try {
+      const avatarEl = document.getElementById('toolbar-avatar');
+      const hasImg = !!(avatarEl && avatarEl.querySelector && avatarEl.querySelector('img'));
+      const storeImage = (window.AvatarStore && typeof window.AvatarStore.getImage === 'function') ? window.AvatarStore.getImage() : null;
+
+      if (!window.currentUser || window.userDataReady === false || (!hasImg && !storeImage)) {
+        console.log('Avatar click ignored — user not ready or no avatar image', { hasImg, hasStoreImage: !!storeImage, userDataReady: window.userDataReady });
+        e.preventDefault();
+        return;
+      }
+    } catch (err) {
+      console.warn('Error checking avatar presence, allowing click as fallback', err);
+    }
+
     e.preventDefault();
     e.stopPropagation();
     console.log('Avatar button clicked');
-    if (typeof window.openUserMenu === 'function') {
-      console.log('Calling window.openUserMenu()');
-      try {
-        await window.openUserMenu();
-      } catch (err) {
-        console.error('Error opening user menu:', err);
+    // Ensure the user menu is initialized before opening it to avoid missing DOM nodes
+    try {
+      if (typeof window.initUserMenu === 'function') {
+        try {
+          await window.initUserMenu();
+        } catch (initErr) {
+          console.warn('initUserMenu failed during avatar click:', initErr);
+        }
       }
-    } else {
-      console.warn('window.openUserMenu is not yet available');
+
+      if (typeof window.openUserMenu === 'function') {
+        console.log('Calling window.openUserMenu()');
+        try {
+          await window.openUserMenu();
+        } catch (err) {
+          console.error('Error opening user menu:', err);
+        }
+      } else {
+        console.warn('window.openUserMenu is not yet available');
+      }
+    } catch (err) {
+      console.error('Avatar click handler error:', err);
     }
   });
 }
+
+/**
+ * Compute a pixel min-width for the links container so it cannot shrink
+ * smaller than the sum of the buttons' min widths, gaps, paddings, and
+ * the train area. This avoids layout collapse when buttons reach their
+ * CSS `min-width`.
+ */
+function ensureToolbarMinWidth() {
+  try {
+    const links = document.getElementById('toolbar-links');
+    if (!links) return;
+
+    const buttons = Array.from(links.querySelectorAll('.button_index'));
+    if (!buttons.length) return;
+
+    const linksStyle = getComputedStyle(links);
+    const gap = parseFloat(linksStyle.gap || linksStyle.columnGap || 0) || 0;
+    const paddingLeft = parseFloat(linksStyle.paddingLeft) || 0;
+    const paddingRight = parseFloat(linksStyle.paddingRight) || 0;
+
+    // Sum each button's computed min-width (fallback to 50 if unknown), plus
+    // its horizontal margins. Computed min-width is typically in pixels.
+    let total = 0;
+    buttons.forEach(btn => {
+      const cs = getComputedStyle(btn);
+      // computed minWidth may be 'auto' or '0px' in some layouts; fall back
+      // to the known CSS minimum of 50px used in our stylesheet.
+      let minW = parseFloat(cs.minWidth);
+      if (!minW || isNaN(minW)) minW = 50;
+      const mLeft = parseFloat(cs.marginLeft) || 0;
+      const mRight = parseFloat(cs.marginRight) || 0;
+      total += minW + mLeft + mRight;
+    });
+
+    // Add gaps between buttons
+    if (buttons.length > 1) total += gap * (buttons.length - 1);
+
+    // Add container paddings
+    total += paddingLeft + paddingRight;
+
+    // If the toolbar includes the train area on the right, include its width
+    const train = document.querySelector('.toolbar-train');
+    if (train) {
+      const trainRect = train.getBoundingClientRect();
+      const trainStyle = getComputedStyle(train);
+      const trainMargin = (parseFloat(trainStyle.marginLeft) || 0) + (parseFloat(trainStyle.marginRight) || 0);
+      total += Math.ceil(trainRect.width + trainMargin);
+    }
+
+    // Apply a small safety buffer to avoid sub-pixel issues
+    const buffer = 2;
+    const minWidthPx = Math.ceil(total) + buffer;
+
+    // Only set if different to avoid layout churn
+    if (links.style.minWidth !== minWidthPx + 'px') {
+      links.style.minWidth = minWidthPx + 'px';
+      // Also set the toolbar element minWidth to keep visual consistency
+      const toolbarEl = document.querySelector('.toolbar');
+      if (toolbarEl) toolbarEl.style.minWidth = minWidthPx + 'px';
+    }
+  } catch (err) {
+    // Fail silently — this is a graceful enhancement
+    console.warn('ensureToolbarMinWidth failed', err);
+  }
+}
+
+// Debounced resize handler to recompute min-width when the viewport changes
+let __toolbarResizeTimer = null;
+window.addEventListener('resize', () => {
+  if (__toolbarResizeTimer) clearTimeout(__toolbarResizeTimer);
+  __toolbarResizeTimer = setTimeout(() => {
+    if (typeof ensureToolbarMinWidth === 'function') ensureToolbarMinWidth();
+  }, 120);
+});
 
 /**
  * Display user avatar in toolbar
  */
 function displayToolbarAvatar() {
   try {
-    // Wait for currentUser to be available
+    // If an in-memory avatar is already cached, render it immediately and
+    // skip querying the profiles table to avoid duplicate work.
+    const storeImage = window.AvatarStore && typeof window.AvatarStore.getImage === 'function'
+      ? window.AvatarStore.getImage()
+      : null;
+
+    const avatarElImmediate = document.getElementById('toolbar-avatar');
+    if (storeImage && avatarElImmediate) {
+      // Ensure single avatar image element exists and update it to avoid duplicates
+      let img = document.getElementById('toolbar-avatar-img');
+      if (!img) {
+        avatarElImmediate.innerHTML = '';
+        img = document.createElement('img');
+        img.id = 'toolbar-avatar-img';
+        avatarElImmediate.appendChild(img);
+      }
+      img.src = storeImage;
+      img.alt = (window.currentUser && `${window.currentUser.email}`) || '';
+      return;
+    }
+
+    // Otherwise wait for currentUser and then query profile to obtain avatar_url
     const waitForUser = async () => {
       let attempts = 0;
       const maxAttempts = 50; // 5 seconds max wait
@@ -182,33 +340,26 @@ function displayToolbarAvatar() {
 
           avatarEl.innerHTML = '';
 
-          // Prefer the centralized AvatarStore if available
-          const storeImage = window.AvatarStore && typeof window.AvatarStore.getImage === 'function'
-            ? window.AvatarStore.getImage()
-            : null;
-
-          if (storeImage) {
-            const img = document.createElement('img');
-            img.src = storeImage;
-            img.alt = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim();
-            avatarEl.appendChild(img);
-            return;
-          }
-
           if (profile?.avatar_url) {
             // populate the AvatarStore for future use
             if (window.AvatarStore && typeof window.AvatarStore.setImage === 'function') {
               try { window.AvatarStore.setImage(profile.avatar_url); } catch (e) { /* ignore */ }
             }
 
-            const img = document.createElement('img');
+            // Ensure single avatar image element exists and update it
+            let img = document.getElementById('toolbar-avatar-img');
+            if (!img) {
+              avatarEl.innerHTML = '';
+              img = document.createElement('img');
+              img.id = 'toolbar-avatar-img';
+              avatarEl.appendChild(img);
+            }
             img.src = profile.avatar_url;
             img.alt = `${profile.first_name} ${profile.last_name}`;
-            avatarEl.appendChild(img);
           } else {
             // Show placeholder via translation when available; no hardcoded fallback
             if (typeof getString === 'function') {
-              avatarEl.textContent = getString('avatar.placeholder');
+              avatarEl.textContent = '';
             } else {
               avatarEl.textContent = '';
             }
@@ -229,7 +380,7 @@ function displayToolbarAvatar() {
         }
       }, 1000); // Check every 1 second
     };
-    
+
     waitForUser();
   } catch (error) {
     console.error('Error displaying toolbar avatar:', error);
@@ -239,17 +390,38 @@ function displayToolbarAvatar() {
 // Listen for the avatarUpdated event
 function initializeToolbar() {
     // ...existing toolbar initialization code...
+  document.addEventListener('avatarUpdated', (event) => {
+    const avatarUrl = event && event.detail && event.detail.avatarUrl;
+    const avatarElement = document.getElementById('toolbar-avatar');
 
-    document.addEventListener('avatarUpdated', (event) => {
-        const { avatarUrl } = event.detail;
-        const avatarElement = document.getElementById('toolbar-avatar'); // Replace with the actual selector
-        if (avatarElement) {
-            avatarElement.src = avatarUrl; // Update the avatar image source
-        }
+    if (!avatarElement) {
+      // If toolbar avatar element is missing, fallback to full render
+      displayToolbarAvatar();
+      return;
+    }
 
-        // Optionally, refresh the toolbar avatar display logic
-        displayToolbarAvatar();
-    });
+    // If there's already an <img> inside the avatar container, update its src directly
+    const existingImg = avatarElement.querySelector('img');
+    if (existingImg) {
+      if (avatarUrl) existingImg.src = avatarUrl;
+      // Update alt/title if provided
+      if (event && event.detail && event.detail.alt) existingImg.alt = event.detail.alt;
+      return;
+    }
+
+    // No <img> present — insert one if we have a URL
+    if (avatarUrl) {
+      avatarElement.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = avatarUrl;
+      img.alt = (window.currentUser && `${window.currentUser.email}`) || '';
+      avatarElement.appendChild(img);
+      return;
+    }
+
+    // Otherwise, fall back to the full rendering logic
+    displayToolbarAvatar();
+  });
 }
 
 initializeToolbar();

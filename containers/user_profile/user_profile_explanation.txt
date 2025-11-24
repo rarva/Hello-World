@@ -1,0 +1,73 @@
+Reading `containers/user_profile/user_profile.html` — explanation & integration notes
+
+- File: `containers/user_profile/user_profile.html`
+- Top-level root:
+  - Element: `<div id="user-profile" class="user-profile">` — use this node as the mount point. Prefer inserting the template’s own `.user-profile` root (so styles/selectors match).
+
+- Structure (high-level):
+  - `.user-profile-inner` — page inner wrapper (already uses flex-column in CSS).
+  - `header.user-profile-header` — title area; static content (translation via `data-i18n`).
+  - `section.user-profile-body` — scrollable content area (CSS has `flex: 1; overflow: auto`).
+  - `.user-profile-column` — centered content column that contains avatar row and the form.
+
+- Avatar area:
+  - Container: `<div id="profile-avatar-row" class="profile-avatar-row">`
+  - Injection slot: `<div id="avatar-slot"></div>` — inject `global/avatar/avatar.html` here and call `setupAvatarUpload(...)`. The avatar component expects elements like `avatar-placeholder`, `avatar-preview`, `avatar-file-input`, plus buttons (`avatar-plus-btn`, `avatar-choose-btn`) — ensure injected HTML includes those IDs.
+
+- Form:
+  - Form element: `<form id="user-profile-form" class="user-profile-form" autocomplete="off" novalidate role="form" aria-describedby="user-profile-errors">`
+  - Fields (name attributes — good keys for serialization):
+    - `full_name`
+    - `language` (select)
+    - `first_name`
+    - `last_name`
+    - `reports_to_email`
+    - `date_hired` (date input)
+    - `department`
+    - `phone`
+    - `birthdate` (date input)
+    - `role`
+  - Read-only email display: `<div id="email-static" class="profile-email">` — not an input; if you need the email in form state, read `.profile-email.textContent`.
+  - Date fields include `.date-field` with a `.date-icon` span (for styling/icons).
+
+- Errors & status:
+  - `<div id="user-profile-errors" class="user-profile-errors" aria-live="polite" role="status"></div>` — place validation/server errors here; screen-reader friendly.
+
+- Actions / Buttons:
+  - Save: `<button id="user-profile-save" class="btn btn-primary" type="button">` — JS should handle click; button is not a submit input.
+  - Cancel: `<button id="user-profile-cancel" class="btn btn-primary btn-cancel" type="button">`
+  - Note: JS should enable/disable the Save button, and call `save` on click.
+
+- Accessibility & i18n:
+  - Uses `data-i18n` attributes for strings.
+  - `role="form"` and `aria-describedby` for error area; `aria-live` on errors and `.profile-email` uses `aria-live="polite"` — good for dynamic updates.
+
+- Behavioral/Integration notes (how JS should interact):
+  - Mounting:
+    - Insert the `.user-profile` element into a container that participates in the app layout (e.g., `#main-container` before `#footer-container`) so CSS flex rules let it grow between toolbar and footer.
+    - Do not wrap the template in an extra element (preserve the `.user-profile` root).
+  - Selecting elements in JS:
+    - Root: `document.querySelector('.user-profile')` or `#user-profile`
+    - Form: `document.getElementById('user-profile-form')` or `formSelector = '#user-profile-form'`
+    - Save/Cancel: `#user-profile-save`, `#user-profile-cancel`
+    - Avatar slot: `#avatar-slot`
+    - Errors node: `#user-profile-errors`
+    - Email display: `.profile-email` (read/write textContent)
+  - Form state:
+    - Use input `name` attributes when serializing (e.g., `form.querySelectorAll('input, select, textarea')`).
+    - Remember date inputs store ISO date strings via `value`.
+  - Avatar:
+    - Inject `global/avatar/avatar.html` into `#avatar-slot` and call `setupAvatarUpload('avatar-placeholder','avatar-file-input')`.
+    - Listen for `avatarPreviewChanged` or `avatarUpdated` (AvatarStore) to mark dirty and to persist avatar on save via `window.AvatarStore.setImage(...)` or Supabase upload.
+  - Save flow:
+    - Save button is `type="button"` so prevent default and call JS save handler.
+    - On success, dispatch an event (e.g., `window.dispatchEvent(new CustomEvent('profileSaved', {detail: profile}))`) so other modules update.
+
+- CSS interaction (what to expect):
+  - `.user-profile-inner` is already `display:flex; flex-direction:column; height:100%`.
+  - `.user-profile-body { flex: 1; overflow: auto; }` — this makes header fixed and body scrollable (good).
+  - Ensure the mounted `.user-profile` gets `flex: 1 1 auto` when inserted into `#main-container` so it expands between toolbar and footer.
+
+If you want, I can now:
+- Recreate a minimal `containers/user_profile/user_profile_init.js` that mounts this template root, injects the avatar, wires Save/Cancel, and exposes `window.openUserProfile`/`closeUserProfile`.
+- Or make a tiny proof-of-concept that just mounts the template and shows it (no Supabase). Which would you prefer me to do next?

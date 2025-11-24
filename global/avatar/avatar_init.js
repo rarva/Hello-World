@@ -67,17 +67,24 @@ function setupAvatarUpload(placeholderId, fileInputId) {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        avatarPreview.src = event.target.result;
+        const dataUrl = event.target.result;
+        avatarPreview.src = dataUrl;
         avatarPreview.style.display = 'block';
-        
+
         // Hide placeholder SVG
         const placeholderSvg = avatarPlaceholder.querySelector('svg');
         if (placeholderSvg) placeholderSvg.style.display = 'none';
-        
+
         // Contract button
         isActive = false;
         plusBtn.style.display = 'flex';
         chooseBtn.style.display = 'none';
+
+        // Update in-memory preview only (do not dispatch avatarUpdated).
+        // Consumers (toolbar, menus) will be synced when the user saves.
+        if (window && window.AvatarStore && typeof window.AvatarStore.setPreview === 'function') {
+          try { window.AvatarStore.setPreview(dataUrl); } catch (err) { console.warn('AvatarStore.setPreview failed', err); }
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -121,39 +128,95 @@ function setupAvatarUpload(placeholderId, fileInputId) {
     avatarPlaceholder.style.borderColor = 'var(--color-border-dark)';
     avatarPlaceholder.style.borderStyle = 'solid';
     avatarPlaceholder.style.borderWidth = 'var(--border-width)';
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (event) => {
-          avatarPreview.src = event.target.result;
+          const dataUrl = event.target.result;
+          avatarPreview.src = dataUrl;
           avatarPreview.style.display = 'block';
-          
+
           // Hide placeholder SVG
           const placeholderSvg = avatarPlaceholder.querySelector('svg');
           if (placeholderSvg) placeholderSvg.style.display = 'none';
-          
+
           // Contract button
           isActive = false;
           plusBtn.style.display = 'flex';
           chooseBtn.style.display = 'none';
+
+          // Update in-memory preview only (do not dispatch avatarUpdated).
+          if (window && window.AvatarStore && typeof window.AvatarStore.setPreview === 'function') {
+            try { window.AvatarStore.setPreview(dataUrl); } catch (err) { console.warn('AvatarStore.setPreview failed', err); }
+          }
         };
         reader.readAsDataURL(file);
       }
     }
   });
+
+  // If there's an avatar already in memory, show it immediately
+  if (window && window.AvatarStore && typeof window.AvatarStore.getImage === 'function') {
+    const current = window.AvatarStore.getImage();
+    if (current) {
+      avatarPreview.src = current;
+      avatarPreview.style.display = 'block';
+      const placeholderSvg = avatarPlaceholder.querySelector('svg');
+      if (placeholderSvg) placeholderSvg.style.display = 'none';
+    }
+  }
+
+  // Keep this placeholder in sync when the shared AvatarStore changes.
+  // Listen on window so other modules that dispatch the event will be caught.
+  try {
+    window.addEventListener('avatarUpdated', (ev) => {
+      const url = (ev && ev.detail && ev.detail.avatarUrl) || (window.AvatarStore && typeof window.AvatarStore.getImage === 'function' && window.AvatarStore.getImage());
+      if (url) {
+        avatarPreview.src = url;
+        avatarPreview.style.display = 'block';
+        const placeholderSvg = avatarPlaceholder.querySelector('svg');
+        if (placeholderSvg) placeholderSvg.style.display = 'none';
+      }
+    });
+  } catch (err) {
+    console.warn('Failed to bind avatarUpdated listener for placeholder', err);
+  }
 }
 
 // Global avatar store: central place to keep the currently loaded avatar image URL/data
 if (!window.AvatarStore) {
   window.AvatarStore = {
     imageUrl: null,
+    // Update the in-memory preview without notifying consumers. Use this
+    // when the user changes the preview locally; consumers should only
+    // be notified when the change is persisted (via `setImage`).
+    setPreview(url) {
+      this.imageUrl = url;
+      try {
+        // Notify listeners that the preview changed (does not mean it's persisted)
+        if (typeof window !== 'undefined' && window.dispatchEvent) {
+          window.dispatchEvent(new CustomEvent('avatarPreviewChanged', { detail: { avatarUrl: url } }));
+        }
+      } catch (e) {
+        // ignore
+      }
+    },
     setImage(url) {
       this.imageUrl = url;
       try {
+        // Dispatch on window so most modules can listen for updates
         window.dispatchEvent(new CustomEvent('avatarUpdated', { detail: { avatarUrl: url } }));
+      } catch (e) {
+        // ignore
+      }
+      try {
+        // Some modules may listen on document; dispatch there as well for compatibility
+        if (typeof document !== 'undefined' && document.dispatchEvent) {
+          document.dispatchEvent(new CustomEvent('avatarUpdated', { detail: { avatarUrl: url } }));
+        }
       } catch (e) {
         // ignore
       }
@@ -171,7 +234,7 @@ if (!window.AvatarStore) {
 function getInitials(firstName, lastName) {
   const first = (firstName || '').trim().charAt(0).toUpperCase();
   const last = (lastName || '').trim().charAt(0).toUpperCase();
-  return (first + last) || '?';
+  return (first + last) || '';
 }
 
 /**
@@ -314,15 +377,42 @@ async function compressAvatarPreview() {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      // Draw circular image on canvas
+      // Crop the image to a centered square so we preserve the same
+      // center-cropped preview the user saw before saving.
+      const iw = img.width;
+      const ih = img.height;
+      let sx = 0, sy = 0, sw = iw, sh = ih;
+
+      if (iw > ih) {
+        // image is wider than tall -> take centered square of height
+        sw = ih;
+        sh = ih;
+        sx = Math.floor((iw - ih) / 2);
+        sy = 0;
+      } else if (ih > iw) {
+        // image is taller than wide -> take centered square of width
+        sw = iw;
+        sh = iw;
+        sx = 0;
+        sy = Math.floor((ih - iw) / 2);
+      }
+
+      // Draw circular image on canvas (apply clipping after computing crop)
       ctx.beginPath();
       ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
       ctx.clip();
-      
-      // Draw image (it will be cropped to circle by clipping path)
-      ctx.drawImage(img, 0, 0, size, size);
-      
-      // Convert canvas to blob
+
+      // Draw the center-cropped source into the destination square (0,0,size,size)
+      // This preserves the preview composition instead of stretching the whole image.
+      try {
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
+      } catch (drawErr) {
+        // Fallback: draw without cropping if something goes wrong
+        console.warn('drawImage center-crop failed, falling back to default draw', drawErr);
+        ctx.drawImage(img, 0, 0, size, size);
+      }
+
+      // Convert canvas to blob (PNG preserves transparency; JPEG can be used for smaller size)
       canvas.toBlob(
         (blob) => {
           if (blob) {
@@ -332,7 +422,7 @@ async function compressAvatarPreview() {
           }
         },
         'image/png',
-        0.9 // Quality 0-1, 0.9 = good quality, small size
+        0.9
       );
     };
     img.onerror = () => reject(new Error('Failed to load avatar image'));
@@ -377,4 +467,11 @@ async function uploadAvatarToSupabase(userId) {
     console.error('Avatar upload error:', error);
     throw error;
   }
+}
+
+// Expose upload helper globally so other modules can call it reliably.
+try {
+  if (typeof window !== 'undefined') window.uploadAvatarToSupabase = uploadAvatarToSupabase;
+} catch (e) {
+  // ignore in non-browser environments
 }

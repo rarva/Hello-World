@@ -23,7 +23,7 @@ async function initializeOnboarding() {
   try {
     await loadStrings(); // Ensure strings are loaded first
     await loadOnboardingHTML(); // Load and append onboarding HTML
-    loadOnboardingStyles(); // Load required stylesheets
+    await loadOnboardingStyles(); // Load required stylesheets (wait to avoid FOUC)
     await loadAvatarSection(); // Load avatar section HTML
     setupOnboardingForm(); // Set up form event listeners
     translateOnboarding(); // Translate onboarding modal
@@ -54,8 +54,16 @@ async function loadOnboardingHTML() {
  * Load the required stylesheets for the onboarding modal.
  */
 function loadOnboardingStyles() {
+  // Use safe loader to avoid FOUC; return a Promise that resolves when both styles have loaded
+  if (window.loadStylesheetSafe) {
+    return Promise.all([
+      window.loadStylesheetSafe('containers/onboarding/onboarding_styles.css', 'onboarding-styles'),
+      window.loadStylesheetSafe('global/avatar/avatar_styles.css', 'avatar-styles')
+    ]);
+  }
   loadStylesheet('containers/onboarding/onboarding_styles.css');
   loadStylesheet('global/avatar/avatar_styles.css');
+  return Promise.resolve();
 }
 
 /**
@@ -69,6 +77,58 @@ async function loadAvatarSection() {
   const avatarSection = document.querySelector('#onboarding-wrapper #avatar-section');
   if (avatarSection) {
     avatarSection.innerHTML = avatarHtml;
+
+    // Clear any existing avatar preview for the onboarding instance so the
+    // placeholder is shown empty when onboarding opens. This avoids leaking a
+    // previously-uploaded preview into the onboarding flow.
+    try {
+      const avatarPlaceholder = avatarSection.querySelector('#avatar-placeholder');
+      if (avatarPlaceholder) {
+        const avatarPreview = avatarPlaceholder.querySelector('#avatar-preview');
+        if (avatarPreview) {
+          avatarPreview.src = '';
+          avatarPreview.style.display = 'none';
+        }
+        const placeholderSvg = avatarPlaceholder.querySelector('svg');
+        if (placeholderSvg) {
+          placeholderSvg.style.display = '';
+        }
+      }
+      // Also clear any in-memory preview stored in AvatarStore so onboarding
+      // starts with a clean state (matches a full page refresh behavior).
+      if (window && window.AvatarStore && typeof window.AvatarStore.setPreview === 'function') {
+        try {
+          window.AvatarStore.setPreview(null);
+        } catch (err) {
+          console.warn('Failed to clear AvatarStore preview for onboarding', err);
+        }
+      }
+      // Also clear toolbar avatar DOM immediately so the toolbar doesn't
+      // display the previous user's avatar while onboarding is open.
+      try {
+        const toolbarAvatarEl = document.getElementById('toolbar-avatar');
+        if (toolbarAvatarEl) {
+          // Remove any existing image
+          const existingImg = toolbarAvatarEl.querySelector('img');
+          if (existingImg) existingImg.remove();
+
+          // Show placeholder text if translations available
+          if (typeof getString === 'function') {
+            toolbarAvatarEl.textContent = '';
+          } else {
+            toolbarAvatarEl.textContent = '';
+          }
+          // Apply placeholder styling consistent with syncToolbarAvatar
+          toolbarAvatarEl.style.backgroundColor = 'var(--color-primary)';
+          toolbarAvatarEl.style.color = 'var(--font-color-light)';
+        }
+      } catch (err) {
+        console.warn('Failed to clear toolbar avatar DOM for onboarding', err);
+      }
+    } catch (err) {
+      // Best-effort: do not block onboarding if clearing fails
+      console.warn('Failed to reset onboarding avatar preview', err);
+    }
   }
 }
 
@@ -203,7 +263,7 @@ function syncToolbarAvatar(avatarUrl, firstName, lastName) {
       toolbarAvatar.style.color = '';
     } else {
       if (typeof getString === 'function') {
-        toolbarAvatar.textContent = getString('avatar.placeholder');
+        toolbarAvatar.textContent = '';
       } else {
         toolbarAvatar.textContent = '';
       }
@@ -289,6 +349,16 @@ async function handleOnboardingSubmit(e) {
     });
 
     syncToolbarAvatar(avatarUrl, formData.firstName, formData.lastName);
+    // Notify manager about new user (best-effort, non-blocking)
+    try {
+      if (formData.reportsToEmail && window.EmailClient && typeof window.EmailClient.sendEmail === 'function') {
+        window.EmailClient.sendEmail('manager_notification', formData.reportsToEmail, {
+          userEmail: user.email,
+          userName: `${formData.firstName} ${formData.lastName}`
+        }).catch(() => {/* swallow errors */});
+      }
+    } catch (e) { /* non-fatal */ }
+
     await finalizeOnboarding();
   } catch (error) {
     console.error('Error saving onboarding:', error);

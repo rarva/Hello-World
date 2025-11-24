@@ -4,13 +4,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px ;
+  width: 40px;
   height: 40px;
   border-radius: 50%;
   margin: 0;
-  background: var(--color-primary);
+  background: var(--color-bg);
   cursor: pointer;
-
+  z-index: 10000;
+  overflow: hidden;
 }
 
 #toolbar-avatar img {
@@ -20,85 +21,109 @@
   object-fit: cover;
 }
 
-
-
 #toolbar-avatar-btn {
   position: absolute;
-  right: 140px;
-  top: 15px;  /* Align with the top of the toolbar links */
-  z-index: 10;
+  left: 20px;
+  top: 35px;
+  z-index: 2000;
   border: none;
   background: transparent;
   padding: 0;
   border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .toolbar {
   display: flex;
-  align-items: center;
+  flex-direction: row;
+  /* enforce a local fixed height so the toolbar cannot be collapsed */
+  flex: 0 0 100px;
+  min-height: 100px;
+ /* min-width:0; /* allow toolbar to shrink with the window */
+  align-self: stretch;
+  box-sizing: border-box;
   background-color: var(--color-bg);
-  font-family: var(--font-stack)    ;
-  height: var(--toolbar-height);
-  width: 100%;
-  overflow: visible;
-  flex-shrink: 0;
-  margin-top: 10px;
-  position: relative;
- 
+  font-family: var(--font-stack);
+  height: 100px; /* local fixed toolbar height */
+  overflow:hidden;
+  margin-top: 10px  ; /*do not change*/
 }
 
 #toolbar-links {
- 
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding-left: 20px;
-  padding-top: 20px;
+  padding: 0 20px; /* space of the first button to the left of screen  */
+
+  gap: 20px;
   background-color: var(--color-primary);
   flex-grow: 1;
-  height: var(--toolbar-height);
+  /* Allow children to shrink and be clipped; `min-content` prevents clipping */
+  min-width: 0;
+
+  height: 100%; /* fill the toolbar height so children can stretch */
 }
 
-#toolbar-links a {
-
+#toolbar-links .button_index {
   display: inline-flex;
-  align-items: center;
+  align-items: center; /* align children inside the button */
   justify-content: center;
-  height: calc(var(--toolbar-height) / 3);
-  min-width: 100px;
-  margin: 0 8px;
-  padding: 0 18px;
+  margin: 20px  0; /*!dont change! space from the top of toolbar to the buttons */
+  /* allow buttons to grow to fill available space, but still shrink to min-width */
+  flex: 1 1 0; /* grow:1 so buttons expand; shrink:1 to allow shrinking to min-width */
+  min-width: 50px;
+ /* max-width: 150px;*/
+  padding: 0 20px;/*!dont change! */
   background-color: var(--font-color-light);
   color: var(--color-primary);
+  font-size: var(--font-text-regular);
+  line-height: 1;
+  white-space: nowrap; /* prevent wrapping so ellipsis works */
+  overflow: hidden;
+  text-overflow: ellipsis; /* show ... when text overflows */
   text-align: center;
   text-decoration: none;
   border-radius: var(--radius);
   box-sizing: border-box;
   box-shadow: none;
   transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
+  height: 35px;
+  /* NEVER INCLUDE align-self: center we dont want tha behaviour  align-self: center; */
 }
 
-#toolbar-links a:hover {
+#toolbar-links .button_index:hover {
   background-color: var(--color-secondary);
   color: var(--font-color-light);
-
 }
 
 .toolbar-train {
-
-
   width: 200px;
   height: 100px;
-background-color: var(--color-bg);
- 
+  background-color: var(--color-bg);
+  position: relative; /* required for avatar absolute positioning */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100; /* ensure train sits below avatar */
+  right: 10px;
 }
 
 .inline-train-svg {
-  width: 200px;
+  margin-left: -2px;
+  width: 250px;
   height: 100px;
-  color: var(--color-primary  );
-  position: absolute;
-  right: 10px;  /* MARGEN ENTRE O NARIZ DO COMBOIO E A DIREITA*/
+  color: var(--color-primary);
+  right: 10px; /* margin between train nose and right */
+}
 
-
+/* Label inside button should be block-level and shrinkable so ellipsis applies */
+#toolbar-links .button_index .button_label {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
