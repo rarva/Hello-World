@@ -6,3 +6,6 @@ COPILOT_GUIDE.txt
 
 # Local uniformity/lint check scripts (developer-only)
 uniformity_checks/
+
+# Ignore bulk garbage / vendored packages accidentally added
+GARBAGE/
