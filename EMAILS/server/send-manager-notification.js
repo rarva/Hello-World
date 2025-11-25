@@ -56,18 +56,27 @@ export default async function handler(req) {
     }
 
     // Validate token with Supabase Auth endpoint
+    // Some Supabase auth endpoints require the project `apikey` header
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || null;
+
     const userRes = await fetch(`${supabaseUrl.replace(/\/$/, '')}/auth/v1/user`, {
       method: 'GET',
-      headers: { Authorization: auth }
+      headers: Object.assign({ Authorization: auth }, supabaseAnonKey ? { apikey: supabaseAnonKey } : {})
     });
 
     if (!userRes.ok) {
+      // Minimal logging on token validation failure (avoid logging response bodies)
+      console.info('supabase_token_validation_failed', { status: userRes.status });
       return jsonResponse({ error: 'invalid_token' }, 401, CORS_HEADERS);
     }
 
     const user = await userRes.json();
     const userId = user?.id;
-    if (!userId) return jsonResponse({ error: 'invalid_user' }, 401, CORS_HEADERS);
+    if (!userId) {
+      // Minimal log for unexpected user payload
+      console.info('supabase_invalid_user_payload');
+      return jsonResponse({ error: 'invalid_user' }, 401, CORS_HEADERS);
+    }
 
     // Minimal business authorization: if actorId supplied it must match caller, otherwise allow
     if (actorId && actorId !== userId) {
@@ -96,8 +105,17 @@ export default async function handler(req) {
 
     if (templateName) {
       // If using SendGrid templates you would set template_id and dynamic_template_data
-      payload.template_id = templateName;
-      payload.dynamic_template_data = templateData;
+      // Only set `template_id` when it looks like a real SendGrid template GUID.
+      const isGuid = typeof templateName === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(templateName);
+      if (isGuid) {
+        payload.template_id = templateName;
+        payload.dynamic_template_data = templateData;
+      } else {
+        // Treat `templateName` as a local alias; do not set `template_id` so SendGrid will use `content`.
+        // Keep minimal debug level to avoid noise in production logs.
+        try { console.debug && console.debug('template_alias_used_no_guid'); } catch (e) {}
+        if (templateData) payload.dynamic_template_data = templateData;
+      }
     }
 
     // Call SendGrid
@@ -117,15 +135,13 @@ export default async function handler(req) {
     }
 
     if (sgRes.ok || sgRes.status === 202) {
-      // Log a non-sensitive event
-      console.log(`email_request:userId:${userId}:to:${recipient_email}:status:success`);
+      // Log a concise, non-sensitive event
+      console.info(`email_request:userId:${userId}:to:${recipient_email}:status:success`);
       return jsonResponse({ ok: true }, 200, CORS_HEADERS);
     }
 
-    // Try to read SendGrid error body, but avoid leaking secrets
-    let sgBody = null;
-    try { sgBody = await sgRes.text(); } catch (e) { sgBody = null; }
-    console.warn('sendgrid_response_not_ok', sgRes.status, sgBody ? sgBody.slice(0, 300) : '');
+    // Minimal warning for SendGrid failures; avoid logging full response bodies in production
+    try { console.warn && console.warn('sendgrid_response_not_ok', { status: sgRes.status }); } catch (e) {}
     return jsonResponse({ error: 'email_send_failed', status: sgRes.status }, 502, CORS_HEADERS);
 
   } catch (err) {

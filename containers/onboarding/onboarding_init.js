@@ -352,21 +352,41 @@ async function handleOnboardingSubmit(e) {
     // Notify manager about new user (best-effort, non-blocking)
     try {
       if (formData.reportsToEmail && window.emailClient && typeof window.emailClient.sendManagerNotification === 'function') {
-        window.emailClient.sendManagerNotification({
-          recipient_email: formData.reportsToEmail,
-          subject: (typeof getString === 'function') ? getString('emails.manager_notification.subject') : 'You have a new report',
-          templateName: 'manager_notification',
-          templateData: {
+        (async () => {
+          const templateData = {
             managerName: '',
             reportName: `${formData.firstName} ${formData.lastName}`,
             company: window.APP_COMPANY_NAME || 'Rhomberg',
             userEmail: user.email
+          };
+
+          // Try to fetch the local HTML template and perform simple placeholder replacement.
+          // Fallback to a minimal HTML body if the template cannot be loaded.
+          let html = null;
+          try {
+            const tplRes = await fetch('EMAILS/templates/manager_notification.html');
+            if (tplRes.ok) {
+              let tpl = await tplRes.text();
+              html = tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (m, key) => (templateData[key] != null ? templateData[key] : ''));
+            }
+          } catch (e) {
+            // ignore and fallback
           }
-        }).then(res => {
-          console.log('manager notification queued:', res && (res.ok || res.status) ? res : 'unknown');
-        }).catch(err => {
-          console.warn('manager notification failed (non-blocking):', err);
-        });
+          if (!html) {
+            html = `<div><strong>${templateData.reportName}</strong> has been added as a direct report to ${templateData.company}.</div>`;
+          }
+
+          window.emailClient.sendManagerNotification({
+            recipient_email: formData.reportsToEmail,
+            subject: (typeof getString === 'function') ? getString('emails.manager_notification.subject') : 'You have a new report',
+            html,
+            templateData // keep for potential future use on server
+          }).then(res => {
+            console.log('manager notification queued:', res && (res.ok || res.status) ? res : 'unknown');
+          }).catch(err => {
+            console.warn('manager notification failed (non-blocking):', err);
+          });
+        })();
       }
     } catch (e) { /* non-fatal */ }
 
