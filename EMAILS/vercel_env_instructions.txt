@@ -1,0 +1,53 @@
+Vercel Environment Variables — Setup Instructions
+
+This document shows two ways to add environment variables to your Vercel project: (A) interactive via the Vercel CLI, and (B) non-interactive via the Vercel API using a `VERCEL_TOKEN`.
+
+Important: Do NOT commit secrets into the repository.
+
+Required variables for this project
+- SENDGRID_API_KEY  (server-only)
+- EMAIL_FROM        (sender address, e.g. "Rhomberg OrgChart <no-reply@yourdomain.com>")
+- SUPABASE_URL     (your Supabase project URL)
+
+Option A — Interactive (recommended for most users)
+1. Install & login with Vercel CLI if needed:
+   npm i -g vercel
+   vercel login
+
+2. Add the variables (choose environment: `production`, `preview`, or `development`):
+   vercel env add SENDGRID_API_KEY production
+   # when prompted, paste the API key value (it will not be echoed)
+
+   vercel env add EMAIL_FROM production
+   # enter the sender address (e.g. "Rhomberg OrgChart <no-reply@yourdomain.com>")
+
+   vercel env add SUPABASE_URL production
+   # enter your Supabase base URL (e.g. https://your-project.supabase.co)
+
+3. Verify the variables exist:
+   vercel env ls
+
+Option B — Non-interactive via Vercel API (useful for automation)
+Prerequisites:
+- You must have a `VERCEL_TOKEN` (create a Personal Token in Vercel Dashboard → Tokens).
+- You must know your Vercel `PROJECT_ID`. (Find it in the Vercel dashboard project settings or via `vercel projects list --token $VERCEL_TOKEN`.)
+
+API example (curl) — set an env variable for production:
+  curl -X POST "https://api.vercel.com/v9/projects/<PROJECT_ID>/env" \
+    -H "Authorization: Bearer $VERCEL_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"key":"SENDGRID_API_KEY","value":"SG.XXXXXXXX","target":["production"]}'
+
+API example — list env variables for a project:
+  curl -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v8/projects/<PROJECT_ID>/env"
+
+Notes on targets:
+- `target` can be `production`, `preview`, or `development`. Use `"target":["preview","production"]` to set in multiple scopes.
+
+Security notes
+- Keep `VERCEL_TOKEN` secret. Use CI secrets in GitHub Actions or your CI provider for automation.
+- The `SENDGRID_API_KEY` must be server-only; do not expose it in client-side code or logs.
+
+If you want, I can scaffold a small PowerShell example that uses `VERCEL_TOKEN` + `curl` to add the three required env vars (you will still need to supply values interactively or via environment variables).
+
+End of instructions.

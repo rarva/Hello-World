@@ -413,8 +413,30 @@
 								window.currentProfileData = Object.assign(window.currentProfileData||{}, update);
 							}
 
-							// Close profile after successful save
-							try { closeUserProfile(); } catch(e){ /* ignore */ }
+														// Notify manager about update (best-effort, non-blocking)
+														try {
+															const managerEmail = update.reports_to_email || null;
+															if (managerEmail && window.emailClient && typeof window.emailClient.sendManagerNotification === 'function') {
+																try {
+																	window.emailClient.sendManagerNotification({
+																		recipient_email: managerEmail,
+																		subject: (typeof getString === 'function') ? getString('emails.manager_notification.subject') : 'You have a new report',
+																		templateName: 'manager_notification',
+																		templateData: {
+																			managerName: '',
+																			reportName: update.full_name || `${update.first_name||''} ${update.last_name||''}`.trim(),
+																			company: window.APP_COMPANY_NAME || 'Rhomberg',
+																			userEmail: (window.currentUser && (window.currentUser.email || window.currentUser.user?.email)) || ''
+																		}
+																	}).then(res => {
+																		console.log('manager notification queued:', res && (res.ok || res.status) ? res : 'unknown');
+																	}).catch(err => { console.warn('manager notification failed (non-blocking):', err); });
+																} catch (e) { /* swallow */ }
+															}
+														} catch (e) { /* non-fatal */ }
+
+														// Close profile after successful save
+														try { closeUserProfile(); } catch(e){ /* ignore */ }
 						} finally {
 							save.disabled = false;
 							save.textContent = oldText;

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Manager Notification</title>
+    <style>
+      body{font-family:Arial,Helvetica,sans-serif;color:#222}
+      .container{max-width:600px;margin:24px auto;padding:16px;border:1px solid #eee}
+      .header{font-size:18px;font-weight:700;margin-bottom:8px}
+      .muted{color:#666;font-size:13px}
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">You have a new report: {{reportName}}</div>
+      <div>Hello {{managerName}},</div>
+      <p>
+        This is an automated notification from {{company}} to let you know that
+        <strong>{{reportName}}</strong> has been added as a direct report to your team.
+      </p>
+      <p>
+        If you have questions, please sign in to the application to view the full profile.
+      </p>
+      <p class="muted">This message was generated automatically — please do not reply.</p>
+    </div>
+  </body>
+</html>

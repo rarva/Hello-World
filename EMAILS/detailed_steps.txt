@@ -1,0 +1,199 @@
+Detailed Steps: Edge Email Endpoint (from plan start → completion)
+
+This document lists every step in fine detail from the initial plan through final verification. Follow it sequentially. Replace placeholder values and never commit secrets to git.
+
+PREPARATION
+1. Review and requirements
+   - Confirm Supabase is used for auth and DB (the frontend already references `window.supabase`).
+   - Confirm we will validate Supabase JWT server-side (Option B).
+   - Confirm SendGrid will be used for email delivery and that you will store the SendGrid key in Vercel environment variables.
+
+2. Branch and safety
+   - Create a working branch for these changes:
+     - `git checkout -b feat/email-edge-sendgrid`
+   - Ensure `GARBAGE/` and other sensitive paths are in `.gitignore`.
+   - Rotate any previously leaked SendGrid keys immediately (out-of-band) and make a note of the new key.
+
+FILE LAYOUT (what we'll add)
+ - `EMAILS/plan.txt`              (already created)
+ - `EMAILS/detailed_steps.txt`    (this file)
+ - `EMAILS/server/send-manager-notification.js`   (Edge handler)
+ - `api/send-manager-notification.js`             (Vercel shim routing)
+ - `EMAILS/client/email_client.js`               (frontend wrapper)
+ - `EMAILS/templates/manager_notification.html`  (optional template)
+ - `EMAILS/README.md`                            (docs + curl examples)
+
+DETAILED IMPLEMENTATION STEPS
+Step A — Create Edge handler (EMAILS/server/send-manager-notification.js)
+  A.1 File header & runtime marker
+    - File must be an ES module. Put at top:
+      export const config = { runtime: 'edge' };
+      export default async function handler(req) { /* ... */ }
+
+  A.2 Handle OPTIONS preflight (CORS)
+    - If `req.method === 'OPTIONS'`: return a Response with headers:
+      Access-Control-Allow-Origin: *
+      Access-Control-Allow-Methods: POST, OPTIONS
+      Access-Control-Allow-Headers: Authorization, Content-Type
+      Access-Control-Max-Age: 86400
+
+  A.3 Parse and validate request body
+    - Only accept `POST` for the main flow.
+    - Expect JSON body with one of the following shapes:
+      { recipient_email, subject, html, text }
+      OR
+      { recipient_email, templateName, templateData }
+    - Validate `recipient_email` is a non-empty string and a valid email.
+    - Validate other fields exist for chosen path; on invalid input return 400.
+
+  A.4 Read and validate Authorization header (Supabase JWT)
+    - Read header: `const auth = req.headers.get('authorization')`.
+    - If missing: return 401 with JSON `{ error: 'missing_authorization' }`.
+    - Validate token by calling Supabase Auth endpoint:
+      const supabaseUrl = process.env.SUPABASE_URL || DUMMY;
+      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { Authorization: auth } });
+      if (!userRes.ok) return 401.
+      const user = await userRes.json();
+    - Extract `user.id` and `user.email` for authorization logic.
+
+  A.5 Authorization logic (business rules)
+    - Define the rule for “who may request sending this email”. Example rules:
+      - Caller may only send emails where they're the actor (user.id === payload.actorId), OR
+      - Caller may send manager notifications if the caller is the user who assigned the manager.
+    - Implement a minimal check: if the action involves notifying a manager about their direct-report, ensure the caller is the subject user or an admin.
+    - On authorization failure return 403.
+
+  A.6 Compose SendGrid payload & call SendGrid REST API
+    - Compose `personalizations` with `to: [{ email: recipient_email }]`.
+    - Compose `from` object using `process.env.EMAIL_FROM`.
+    - Include `subject` and `content` (text/html) or `template_id` if using a SendGrid template.
+    - Call `https://api.sendgrid.com/v3/mail/send`:
+      const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    - If sgRes.status is 202 or 200 treat as success. Relay error body for non-2xx.
+
+  A.7 Return success/error
+    - Return `200` (or `202 Accepted`) with `{ ok: true }` on success.
+    - Return helpful JSON for errors, but never include secrets or full error stacks.
+
+  A.8 Logging
+    - Log non-sensitive events for visibility (e.g., "email_request:userId: <id> to <email> status:success").
+    - Avoid logging tokens or API keys.
+
+Example minimal handler skeleton (Edge-compatible):
+  export const config = { runtime: 'edge' };
+  export default async function handler(req) {
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS });
+    if (req.method !== 'POST') return new Response(JSON.stringify({ error: 'method_not_allowed' }), { status: 405 });
+    const body = await req.json();
+    const auth = req.headers.get('authorization');
+    // validate auth -> call Supabase /auth/v1/user
+    // authorize action
+    // call SendGrid via fetch
+    // return response
+  }
+
+Step B — Create Vercel shim (api/send-manager-notification.js)
+  - The shim should re-export the handler so Vercel routes `/api/send-manager-notification` to the Edge function.
+  - Example:
+    import handler from '../EMAILS/server/send-manager-notification.js';
+    export const config = { runtime: 'edge' };
+    export default handler;
+
+Step C — Add client wrapper (EMAILS/client/email_client.js)
+  C.1 Purpose & API
+    - Provide `window.emailClient.sendManagerNotification(opts)` where `opts` contains `recipient_email`, `subject`, `html` or `templateName` + `templateData`.
+    - The function should obtain the current access token from `window.supabase.auth.getSession()` or accept `opts.token`.
+
+  C.2 Implementation details
+    async function sendManagerNotification(opts = {}) {
+      const token = opts.token || (await window.supabase.auth.getSession()).data.session?.access_token;
+      if (!token) throw new Error('no_token');
+      const res = await fetch('/api/send-manager-notification', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(opts)
+      });
+      if (!res.ok) throw new Error(`email_send_failed:${res.status}`);
+      return res.json();
+    }
+    window.emailClient = { sendManagerNotification };
+
+  C.3 Export
+    - Add this file to the build (load in `index.html` or module import in existing front-end code).
+
+Step D — Add template & docs
+  - `EMAILS/templates/manager_notification.html`: a simple HTML file with placeholders, e.g. `{{managerName}}`, `{{reportName}}`.
+  - `EMAILS/README.md`: document required env vars, quick curl examples, and test instructions (see "Testing" below).
+
+Step E — Wire integration points (onboarding & profile)
+  E.1 Onboarding: `containers/onboarding/onboarding_init.js`
+    - Locate `handleOnboardingSubmit` where the profile is stored with Supabase.
+    - After a successful insert/update to `profiles` and when the profile contains a manager email (`reports_to_email`), call:
+      window.emailClient.sendManagerNotification({ recipient_email: reportsToEmail, subject: 'You are now a manager', templateName: 'manager_notification', templateData: { managerName, reportName, company: 'Rhomberg' } })
+
+  E.2 Profile Save: `containers/user_profile/user_profile_init.js`
+    - After a successful UPDATE to the user's profile and when `reports_to_email` changed (compare snapshot), call the same `window.emailClient.sendManagerNotification(...)`.
+
+  E.3 Error handling in UI
+    - If the email client call fails, log to console and show a non-blocking toast to the user. The primary save action should not block on email delivery.
+
+Step F — Environment variables & secrets
+  - Add these to Vercel (Project Settings → Environment Variables) for the production/staging deployments:
+    - `SENDGRID_API_KEY` (value: SG.xxxxx — server only)
+    - `EMAIL_FROM` (value: e.g., "Rhomberg OrgChart <no-reply@example.com>")
+    - `SUPABASE_URL` (value: https://your-project.supabase.co)
+  - Never store keys in the repository. Use Vercel UI or CLI to set them.
+
+Step G — Local testing
+  G.1 Option: Vercel CLI
+    - Install Vercel CLI: `npm i -g vercel` (if not already installed).
+    - Run `vercel dev` from project root to emulate the API routes and Edge runtime.
+
+  G.2 Curl test (example) — replace `<TOKEN>` with a Supabase access token and `<EMAIL_FROM>`/`<RECIPIENT>` accordingly:
+    curl -X POST "http://localhost:3000/api/send-manager-notification" \
+      -H "Authorization: Bearer <TOKEN>" \
+      -H "Content-Type: application/json" \
+      -d '{"recipient_email":"manager@example.com","subject":"New report assigned","html":"<p>Test</p>"}'
+
+  G.3 Browser test
+    - Ensure `EMAILS/client/email_client.js` is loaded and `window.emailClient` exists.
+    - After onboarding/profile save, the UI should call `window.emailClient.sendManagerNotification(...)`. Use browser console to inspect any errors.
+
+Step H — Deployment & verification
+  H.1 Set Vercel env vars in the project for the branch or team.
+  H.2 Deploy to Vercel via Git push or `vercel --prod`.
+  H.3 Smoke tests:
+    - Use the in-app flow to create a user and assign a manager email. Verify SendGrid logs and/or recipient inbox.
+    - Run the curl example against the deployed function with a valid Supabase token.
+
+Step I — Monitoring & follow-up
+  - Add simple logs in the edge handler for success/failure counts (do not log secrets).
+  - Confirm SendGrid sender verification (single-sender verified or domain verified). Add SPF/DKIM records to DNS (Cloudflare) if sending from your domain.
+
+BONUS: Rollback strategy
+  - If the endpoint causes problems, remove the call sites first (undo integration commits) and redeploy.
+  - Alternatively, remove the Vercel env var `SENDGRID_API_KEY` (set empty) and redeploy — the endpoint will fail safely.
+
+Appendix: Recommended code snippets
+  - SendGrid payload example (JSON):
+    {
+      "personalizations": [{"to": [{"email": "manager@example.com"}], "subject": "New report assigned"}],
+      "from": {"email": "no-reply@example.com", "name": "Rhomberg OrgChart"},
+      "content": [{"type": "text/html", "value": "<p>Hi</p>"}]
+    }
+
+  - Minimal CORS headers constant for the edge handler:
+    const CORS_HEADERS = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type'
+    };
+
+Final Notes
+ - This file should be used as the canonical runbook for implementing the Edge-based SendGrid email flow. If you want, I can now scaffold the Edge handler, the shim, the client wrapper, and the minimal template files and open a PR on your working branch.
+
+End of detailed steps.

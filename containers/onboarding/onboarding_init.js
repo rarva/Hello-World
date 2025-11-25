@@ -351,11 +351,22 @@ async function handleOnboardingSubmit(e) {
     syncToolbarAvatar(avatarUrl, formData.firstName, formData.lastName);
     // Notify manager about new user (best-effort, non-blocking)
     try {
-      if (formData.reportsToEmail && window.EmailClient && typeof window.EmailClient.sendEmail === 'function') {
-        window.EmailClient.sendEmail('manager_notification', formData.reportsToEmail, {
-          userEmail: user.email,
-          userName: `${formData.firstName} ${formData.lastName}`
-        }).catch(() => {/* swallow errors */});
+      if (formData.reportsToEmail && window.emailClient && typeof window.emailClient.sendManagerNotification === 'function') {
+        window.emailClient.sendManagerNotification({
+          recipient_email: formData.reportsToEmail,
+          subject: (typeof getString === 'function') ? getString('emails.manager_notification.subject') : 'You have a new report',
+          templateName: 'manager_notification',
+          templateData: {
+            managerName: '',
+            reportName: `${formData.firstName} ${formData.lastName}`,
+            company: window.APP_COMPANY_NAME || 'Rhomberg',
+            userEmail: user.email
+          }
+        }).then(res => {
+          console.log('manager notification queued:', res && (res.ok || res.status) ? res : 'unknown');
+        }).catch(err => {
+          console.warn('manager notification failed (non-blocking):', err);
+        });
       }
     } catch (e) { /* non-fatal */ }
 

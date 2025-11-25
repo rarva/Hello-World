@@ -9,3 +9,4 @@ uniformity_checks/
 
 # Ignore bulk garbage / vendored packages accidentally added
 GARBAGE/
+.vercel

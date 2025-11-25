@@ -1,0 +1,83 @@
+Plan: Edge Email Endpoint & Integration
+
+Overview:
+- Implement an Edge JavaScript email endpoint that validates Supabase JWTs server-side and sends transactional email via SendGrid (HTTP API).
+- Place server code under EMAILS/server/, expose via an api/ shim for Vercel routing, add a browser client under EMAILS/client/, and wire calls from onboarding/profile save handlers.
+- Keep secrets only in Vercel environment variables and rotate any previously leaked keys.
+
+Files to create:
+- EMAILS/server/send-manager-notification.js  -- Edge-compatible handler (ES module) that:
+  - Exports runtime marker for edge (e.g. `export const config = { runtime: 'edge' }`).
+  - Accepts a Request, handles CORS preflight, validates incoming JSON payload, and reads Authorization header for Supabase JWT.
+  - Validates the JWT by calling `${SUPABASE_URL}/auth/v1/user` with `Authorization: Bearer <token>` using fetch.
+  - Verifies caller subject (user id) is authorized for the requested action (e.g. actor matches target or manager relationship).
+  - Calls SendGrid Mail Send REST API via fetch with `Authorization: Bearer ${SENDGRID_API_KEY}` and JSON payload.
+  - Returns 200 on success, and appropriate 4xx/5xx on error with helpful messages.
+
+- api/send-manager-notification.js  -- Thin Vercel shim that forwards to the edge handler for routing.
+
+- EMAILS/client/email_client.js  -- Small browser wrapper that exposes `window.emailClient.sendManagerNotification({recipient, subject, templateData})` and performs a fetch POST to `/api/send-manager-notification` using the current Supabase access token in `Authorization: Bearer <token>`.
+
+- EMAILS/templates/manager_notification.html  -- Optional HTML template (server or client-side micro-templating) for the manager notification.
+
+- EMAILS/README.md  -- Document required environment variables, the curl test/example, and deployment notes.
+
+Detailed Steps:
+1) Edge handler (server/send-manager-notification.js)
+   - Use only Web APIs: `Request`, `Response`, `fetch`, `Headers`, `URLSearchParams`.
+   - Export the runtime marker so Vercel chooses the Edge runtime.
+   - CORS: respond to OPTIONS preflight and return `Access-Control-Allow-Origin`, `Access-Control-Allow-Headers` including `Authorization` and `Content-Type`.
+   - Body validation: require `recipient_email` and either `subject` + `text/html` template or a `templateName` + `templateData` payload.
+   - Auth validation: read `Authorization` header; call `${SUPABASE_URL}/auth/v1/user` with that bearer token using fetch; if invalid, return 401.
+   - Authorization: check that `user.id` (from Supabase user info) is allowed to trigger the email for the requested target (business logic: e.g., manager relationships or self-action). If mismatch, return 403.
+   - SendGrid request: POST to `https://api.sendgrid.com/v3/mail/send` with JSON: `personalizations`, `from` (use `EMAIL_FROM` env var), `subject`, `content` and optional `template_id` or custom HTML. Use `Authorization: Bearer ${SENDGRID_API_KEY}` header.
+   - Return status 200 with SendGrid response summary or appropriate error codes.
+
+2) Vercel shim (api/send-manager-notification.js)
+   - Export the same handler or re-export default from `EMAILS/server/send-manager-notification.js` so Vercel routing hits the edge function.
+
+3) Client wrapper (EMAILS/client/email_client.js)
+   - Provide `async function sendManagerNotification(payload)` that:
+     - Retrieves `window.supabase` session access token (or accepts explicit token param).
+     - Calls `/api/send-manager-notification` with method POST, headers `Authorization: Bearer <token>` and `Content-Type: application/json`.
+     - Returns the JSON result or throws on non-2xx.
+   - Attach to `window.emailClient` so existing UI code can call `window.emailClient.sendManagerNotification(...)`.
+
+4) Integration points
+   - `containers/onboarding/onboarding_init.js` -> inside `handleOnboardingSubmit`, after successful profile create/update and Supabase persistence, call `window.emailClient.sendManagerNotification({recipient_email: newManagerEmail, subject: 'Manager assigned', templateName: 'manager_notification', templateData: {...}})` if a manager email exists.
+   - `containers/user_profile/user_profile_init.js` -> after successful profile Save (when `reports_to_email` or manager fields changed), call the client wrapper to notify the new manager.
+
+Security & Secrets
+- Store secrets in Vercel env vars only: `SENDGRID_API_KEY`, `EMAIL_FROM`, `SUPABASE_URL`.
+- Rotate any leaked SendGrid keys immediately—even if removed from git history.
+- Do not expose service_role keys to the frontend; only use the short-lived access token provided by Supabase Auth.
+
+Edge runtime constraints & compatibility notes
+- Edge functions cannot use Node built-ins (no `fs`, `net`, `crypto` Node-specific API). Use only Web-standard APIs.
+- Do not import the SendGrid Node SDK in an edge function; use `fetch` to call SendGrid's REST endpoints.
+- Verify request/response size limits and execution time constraints on your host (Vercel). Email send + auth validation is lightweight and suits Edge, but attachments or heavy templating may require serverless Node.
+
+Testing & Local Development
+- Use Vercel CLI to emulate edge functions locally (`vercel dev`) or provide a small Node fallback endpoint for local testing.
+- Add curl examples to `EMAILS/README.md` showing how to call the endpoint with `Authorization: Bearer <access_token>`.
+
+Deployment
+- Add Vercel environment variables:
+  - `SENDGRID_API_KEY` (server-only)
+  - `EMAIL_FROM` (sender address)
+  - `SUPABASE_URL` (used to validate tokens)
+- Deploy to Vercel and run smoke tests from the browser and via curl. Monitor SendGrid delivery and check SPF/DKIM DNS configuration later.
+
+Rollout checklist
+- [ ] Rotate leaked keys.
+- [ ] Add `GARBAGE/` to `.gitignore` (already done).
+- [ ] Scaffold `EMAILS/` files and `api/` shim.
+- [ ] Wire `window.emailClient` into onboarding and profile save flows.
+- [ ] Add `EMAILS/README.md` with curl examples and env var instructions.
+- [ ] Deploy to Vercel and verify with test requests.
+
+Notes:
+- Chosen auth pattern: Option B — validate Supabase JWT server-side for auditability and to enforce the actor = subject policy.
+- If large attachments or Node SDK features are needed later, switch the handler to a serverless Node runtime.
+
+End of plan.
