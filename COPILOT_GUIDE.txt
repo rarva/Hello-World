@@ -1,0 +1,1404 @@
+````plaintext
+================================================================================
+COPILOT GUIDE - Hello-World Project Rules & Constraints
+================================================================================
+READ THIS FILE AT THE START OF EACH SESSION!
+
+================================================================================
+RULES (STRICT - MUST FOLLOW)
+================================================================================
+
+RULE 1: UI Translation Enforcement
+- ALL visible text in the UI must come from strings.json only
+- NO hardcoded English text should ever appear to users
+- Every user-facing message must use getString() with a translation key
+- When adding new error messages or UI text, add translations for all 5 languages:
+  en, pt, de, fr, it
+
+RULE 2: Commit Authority
+- NEVER ask the user to commit changes
+- NEVER suggest committing
+- User will explicitly tell you when to commit
+- Wait for: "commit this" or similar explicit instruction
+
+RULE 3: copilot must Ask for Help When Stuck
+- When you (copilot, not the user) start running in circles making changes after changes without progress
+- Don't keep trying random fixes and going nowhere
+- Stop immediately and ask the user for help
+- Explain the problem clearly and request guidance
+- Example: Rather than trying 5+ different event handling approaches, recognize the pattern is failing and ask "I'm stuck on this - can you help me think through the architecture?"
+
+================================================================================
+PROJECT ARCHITECTURE
+================================================================================
+
+Container Pattern (PERSISTENT CONTAINERS):
+- index.html has several persistent containers used to host module HTML; these are
+  loaded and shown/hidden (not recreated) to preserve state and event listeners.
+  Typical containers present in this project:
+  1. `#login-container` - shows login/signup form
+  2. `#toolbar-container` - top navigation (user avatar, nav links)
+  3. `#onboarding-container` - shown when a user needs to complete onboarding
+  4. `#home-container` - main app content after login
+  5. `#footer-container` - always at bottom
+
+Content is injected via `innerHTML` (templates are fetched and inserted). Use the
+show/hide pattern rather than creating/destroying containers to preserve focus
+and reduce layout jank.
+
+Layout notes:
+- Use flexbox where appropriate; content containers typically take `flex: 1`.
+- Keep the footer outside of content flow so it remains visually persistent.
+
+Login Flow:
+1. User enters credentials
+2. `handleLogin()` validates and calls Supabase auth
+3. On success: app orchestration code (in `main.js`) loads toolbar/home and
+  onboarding logic if needed
+4. The login container is hidden and the appropriate content is displayed in
+  `#home-container` (templates are fetched and injected)
+
+Logout Flow:
+1. User clicks logout button in footer
+2. `login_auth.js` calls Supabase signOut
+3. `rememberedEmail` localStorage cleared
+4. App returns to login view (containers toggled), client state reset
+
+Language Support:
+- 5 languages: English (`en`), Portuguese (`pt`), German (`de`), French (`fr`), Italian (`it`)
+- On first visit: detect browser/system language → fallback to English
+- After signup: save selected language to `profiles` table
+- After login: load language from user's profile (not browser)
+- Stored in `profiles` table for persistence across sessions
+- Use `setLanguage()` / `getString()` helpers; `updateLanguageFromProfile()` updates
+  the UI language after login
+- `language_strings.json` (or `language_strings.json`) holds the flat key structure
+  `section.key` → translations for each language
+
+================================================================================
+KEY FILES & THEIR PURPOSES (v1.0.0 - Refactored Structure)
+================================================================================
+
+PROJECT STRUCTURE (high-level):
+├── index.html                      # Main shell with persistent containers
+├── config.js                       # Supabase credentials (git-ignored; generated at deploy)
+├── global/                         # Shared utilities and styles
+│   ├── global_functions.js        # DOM helpers, AvatarStore, event bus
+│   ├── global_styles.css          # CSS variables & tokens (colors, radii)
+│   └── language_manager.js        # i18n helpers, updateLanguageFromProfile()
+├── language_strings.json          # All UI translations (keys × languages)
+├── main.js                         # App orchestrator (session, container orchestration)
+├── uniformity_checks/              # Static checks for hardcoded fonts/colors/strings
+├── containers/
+│   ├── login/                      # Authentication module
+│   ├── toolbar/                    # Top navigation & avatar trigger
+│   ├── onboarding/                 # Post-signup onboarding modal
+│   ├── user_menu/                  # (previously `profile/`) user menu + settings
+│   ├── home/                       # Main app content
+│   └── footer/                     # Footer + logout
+└── migrations/                     # DB migration SQL files
+
+FILE NAMING CONVENTION:
+- `*_init.js` = module initialization (loads HTML, sets up UI)
+- `*_auth.js` = authentication logic (only in login module)
+- `*_errors.js` = error handling (standardized for each module)
+- `*_styles.css` = module-specific CSS (one per container)
+
+KEY FILES DETAILS:
+
+main.js
+- App orchestrator: initializes containers in sequence and manages session
+- Loading order: login → toolbar → home → footer (on successful auth)
+- Loads onboarding when `profiles` row is incomplete
+
+index.html
+- Main app shell with persistent containers (see Project Architecture)
+- Loads global scripts (i18n, globals, Supabase client) and module `*_init.js` files
+
+`global/language_manager.js`
+- Centralized language helpers, `getString(key)` and `updateLanguageFromProfile(lang)`
+
+`global/global_functions.js`
+- Utilities used across modules: DOM helpers, small stores (e.g., `AvatarStore`), and common event names
+
+`containers/user_menu/user_menu_init.js`
+- New location for the user menu / profile dropdown. Exports `initUserMenu`, `openUserMenu`,
+  `closeUserMenu` and provides backward-compatible aliases to the legacy `initProfileModal`/`openProfileModal` names.
+
+`uniformity_checks/`
+- Node scripts that scan the repo for hardcoded colors, fonts, strings, scrollbar styles, and tooltip problems. The runner supports detached/background execution and a `--sync` mode for consolidated reports.
+
+`containers/avatar/`
+- Avatar markup, styles and `avatar_init.js` for preview, upload, initials generation and `AvatarStore` integration.
+
+================================================================================
+MODULE INITIALIZATION PATTERN
+================================================================================
+
+Each module (login, toolbar, home, footer) follows this pattern:
+
+1. *_init.js (module initialization)
+   - Fetch HTML template
+   - Inject into container
+   - Load module styles
+   - Translate UI text from strings.json
+   - Set up event listeners
+   - Initialize submodules
+
+2. *_auth.js (if needed - authentication logic only)
+   - Pure logic functions (no DOM manipulation)
+   - Async functions for API calls
+   - Error handling with translated messages
+
+3. *_errors.js (error handling)
+   - Standardized error display functions
+   - window.showFieldError() - field-level errors
+   - window.showGeneralMessage() - general messages
+   - Translated error text via getString()
+
+4. *_styles.css (module styling)
+   - Uses CSS variables from styles.css
+   - Module-specific overrides
+   - Responsive design (max-width media queries)
+
+NOTES & BEST PRACTICES:
+- Module init functions should export a clear API (e.g. `initUserMenu`, `openUserMenu`, `closeUserMenu`).
+- When renaming modules (example: `profile` → `user_menu`) provide backward-compatible aliases in the new init file so legacy callers keep working during transition.
+- Initialization should be idempotent: calling `init*()` multiple times should not duplicate event listeners or re-insert the same DOM nodes.
+- Always `await` exported async init functions before calling their other methods. Example:
+  ```javascript
+  await initUserMenu();
+  openUserMenu();
+  ```
+- Keep UI logic (DOM) in `*_init.js` and pure business logic in `*_auth.js` or small helper modules to simplify testing.
+
+
+================================================================================
+IMPORTANT CONSTRAINTS
+================================================================================
+VERSION CONTROL & RELEASE PROCESS
+================================================================================
+
+VERSIONING WORKFLOW (For Creating New Release Checkpoints):
+When ready to create a new version checkpoint, follow this exact process:
+
+1. CREATE NEW VERSION BRANCH
+   - Branch name format: v[MAJOR].[MINOR].[PATCH]-[description]
+   - Example: v1.0.1-refactored, v1.1.0-dashboard, v2.0.0-auth-rewrite
+   - Command: git checkout -b v1.0.1-refactored
+
+2. MAKE ALL CODE CHANGES
+   - Implement features/fixes on the new branch
+   - Test thoroughly before proceeding
+   - Commit changes with descriptive messages
+
+3. UPDATE README.md WITH VERSION-SPECIFIC CHANGES
+   - Add version number and date to header
+   - Create section: "## Version v1.0.1 - [Release Date]"
+   - Document: What's new, fixes, improvements
+   - Example sections:
+     * ✅ Features Added
+     * 🐛 Bugs Fixed
+     * 🎨 UI/UX Improvements
+     * 📦 Code Refactoring
+   - Keep historical record of all versions
+
+4. UPDATE COPILOT_GUIDE.txt IF NEEDED
+   - Architecture changes
+   - File structure changes
+   - New patterns or conventions
+   - Updated constraints or rules
+
+5. COMMIT TO NEW BRANCH
+   - Commit message: "v1.0.1: [description] + docs"
+   - Include all changes: code + README + guide
+
+6. CREATE GIT TAG FOR BACKUP
+   - Tag format: v[MAJOR].[MINOR].[PATCH]
+   - Example: git tag -a v1.0.1 -m "Release v1.0.1: Refactored login module"
+   - Tags serve as permanent checkpoints
+
+7. PUSH BRANCH AND TAG
+   - Push branch: git push origin v1.0.1-refactored
+   - Push tag: git push origin v1.0.1
+
+README.md CHANGELOG SECTION TEMPLATE:
+```
+## Version History
+
+### v1.0.1 - Refactored & Polished (Nov 19, 2025)
+✅ **Features Added:**
+- Signup button now shows in signup mode
+
+🐛 **Bugs Fixed:**
+- Animation jank on password visibility toggle
+- Missing signup button element
+
+🎨 **UI/UX Improvements:**
+- Larger password bullets (30px) for better visibility
+- Smoother eye button toggle (no font-size animation)
+- Cleaner focus states (removed large outlines)
+
+📦 **Code Refactoring:**
+- Standardized file naming: load_*.js → *_init.js
+- Split login logic: login_init.js + login_auth.js
+- Removed 90+ lines of duplicate CSS
+- Centralized button colors: --color-button variable
+
+### v1.0.0 - Initial Release (Previous version)
+...
+```
+
+KEY POINTS:
+- Each version gets its own branch (preserves history)
+- Git tags mark permanent release checkpoints
+- README documents what's in each version
+- No overwriting previous versions
+- Easy to checkout old versions if needed: git checkout v1.0.0
+
+BACKUP SNAPSHOTS (Ad-hoc checkpoints)
+------------------------------------
+When you need a stable restore point during an extended refactor or before risky changes, create a backup snapshot branch.
+
+Naming convention:
+- `backup/v[MAJOR].[MINOR].[PATCH]-[short-desc]-YYYY-MM-DD` e.g. `backup/v1.0.1-onboarding-2025-11-22`.
+
+Recommended process:
+1. Create branch from current working branch: `git checkout -b backup/v1.0.1-onboarding-2025-11-22`
+2. Stage all intended files and commit with a clear message: `chore(backup): stable snapshot v1.0.1-onboarding-2025-11-22`
+3. Push the branch to remote: `git push origin backup/v1.0.1-onboarding-2025-11-22`
+4. Optionally create an annotated tag if you want a permanent named checkpoint: `git tag -a backup-v1.0.1-onboarding-2025-11-22 -m "Backup snapshot"` then `git push origin backup-v1.0.1-onboarding-2025-11-22`
+
+NOTES:
+- Backup branches are lightweight and intended for fast restore or bisecting; they are not official releases.
+- Only create/push backup branches when a human approves the snapshot. Automated agents or CI should not push checkpoint branches without explicit authorization.
+
+
+================================================================================
+IMPORTANT CONSTRAINTS
+❌ Hardcode English text visible to users
+❌ Ask user to commit
+❌ Remove persistent containers from index.html
+❌ Store passwords in localStorage (only email is ok)
+❌ Skip error messages - always use translated strings
+❌ Load auth users without checking profiles table first
+
+Do These:
+✅ Use getString() for all visible UI text
+✅ Add all 5 language translations when adding new strings
+✅ Check email exists in profiles before password validation
+✅ Use persistent container pattern (hide/show, don't create/destroy)
+✅ Wait for Supabase.ready before using auth functions
+✅ Always preventDefault() on form submit to prevent double-submission
+✅ Keep footer in place during mode switches and navigation
+
+================================================================================
+COMMON PATTERNS
+================================================================================
+
+Pattern 1: Using Translations
+```javascript
+const message = getString('login.email_not_found');
+showGeneralMessage(message);
+```
+
+Pattern 2: Adding New Translations
+1. Add key to strings.json with all 5 languages
+2. Use getString('key') in code
+3. Test all 5 languages
+
+Pattern 3: Handling Async Supabase
+```javascript
+if (!window.supabaseReady) {
+  await new Promise(resolve => {
+    const check = setInterval(() => {
+      if (window.supabaseReady) {
+        clearInterval(check);
+        resolve();
+      }
+    }, 100);
+    setTimeout(() => clearInterval(check), 5000);
+  });
+}
+```
+
+Pattern 4: Switching Containers
+```javascript
+document.getElementById('login-container').style.display = 'none';
+document.getElementById('shell-container').style.display = 'flex';
+```
+
+Pattern 5: Running uniformity checks (detached by default)
+```bash
+# Run checks in background (non-blocking) - recommended during local work
+node uniformity_checks/run_all_checks.js &
+
+# For synchronous consolidated run (CI or before final commit):
+node uniformity_checks/run_all_checks.js --sync
+```
+
+Pattern 6: Backward-compatible renames / aliasing
+```javascript
+// New module provides legacy names for a smooth transition
+export function initUserMenu() { /* ... */ }
+export const initProfileModal = initUserMenu; // legacy alias
+```
+
+
+================================================================================
+DEBUGGING TIPS
+================================================================================
+
+Issue: Double login submission
+- Check if both button click AND form submit listeners exist
+- Remove duplicate listeners, use form submit only
+
+Issue: Remember-me not working after logout
+- Verify rememberedEmail is set in localStorage on login
+- Check that checkRememberedUser() is called after form HTML loads
+- Ensure load_login.js is loaded in index.html
+
+Issue: Footer moves during transitions
+- Use persistent container pattern, not dynamic creation
+- Keep flex layout consistent
+- Don't use position: fixed on footer
+
+Issue: English text appearing
+- Check for hardcoded text in HTML files
+- Use getString() for all dynamic text
+- Verify strings.json has complete translations
+
+Issue: SVG icons too small / not filling their container
+- Inspect the `viewBox` attribute — if the path coordinates sit in a small bbox within the viewBox, the glyph will appear tiny. Normalize the viewBox to the path's bbox or edit the path to fit the full 0 0 width height box.
+- Ensure CSS makes SVG fill the button: `svg { width: 100%; height: 100%; display:block; }` and the container has explicit width/height.
+
+Issue: Uniformity checks report false positives
+- Common false positives: CSS custom properties (`--color-...`), template literals with `${...}`, files in the `uniformity_checks/` folder itself.
+- Use the `--sync` mode to run checks in CI; use the detached background runs during local work to avoid blocking.
+
+Issue: Background processes terminate on terminal close (Windows PowerShell)
+- When running detached tasks locally on Windows PowerShell 5.1, prefer using `Start-Job` or run via an external terminal window to avoid losing the process. Alternatively run checks in CI using `--sync`.
+
+
+================================================================================
+PREVENTING FOUC (Flash Of Unstyled Content) - ALWAYS FOLLOW
+================================================================================
+FOUC is a brief flash of unstyled or jumbled HTML before styles are applied. Because this project injects templates at runtime into persistent containers, follow these rules to avoid visual flashes and layout jitter:
+
+1) Load critical CSS early and wait for it
+ - For module-specific styles inserted at runtime, wait for the stylesheet `load` event before inserting markup.
+ - Example pattern (used in `containers/*/*_init.js`):
+```javascript
+function loadStyles(href, id){
+  return new Promise(resolve => {
+    const existing = document.getElementById(id);
+    if (existing && (existing.sheet || existing.__loaded)) return resolve();
+    if (existing){ existing.addEventListener('load', ()=>resolve()); existing.addEventListener('error', ()=>resolve()); return; }
+    const link = document.createElement('link');
+    link.id = id; link.rel = 'stylesheet'; link.href = href;
+    link.addEventListener('load', ()=>{ link.__loaded = true; resolve(); });
+    link.addEventListener('error', ()=>resolve());
+    document.head.appendChild(link);
+  });
+}
+```
+
+2) Hide while inserting (avoid visible reflow)
+ - Temporarily set `visibility: hidden` (or `opacity: 0`) on the container while fetching/inserting the template, then restore after styles applied.
+ - This prevents the user from seeing intermediate unstyled markup.
+
+3) Provide a small fade-in on reveal (optional smoothing)
+ - Apply `transition: opacity 160ms ease` and animate from `opacity:0` → `1` after styles are applied to mask remaining timing edges.
+
+4) Use a `no-fouc` helper class for global cases
+ - Add `.no-fouc { visibility: hidden }` to a small inline critical CSS or global stylesheet and remove the class in JS when the app is ready.
+
+5) Consider `preload` for frequently used module styles
+ - Example: `<link rel="preload" href="containers/user_profile/user_profile_styles.css" as="style" onload="this.rel='stylesheet'">` for modules the user opens frequently. Use sparingly.
+
+6) Inline minimal critical CSS only when necessary
+ - If a module needs a tiny set of rules for the initial layout, inline those rules in `index.html` or a small `critical.css` to keep FOUC impossible while larger styles load.
+
+7) Centralize the pattern in module init helpers
+ - Keep `loadStyles()` and the hide-while-insert pattern in your module init template so all modules share the same guard against FOUC.
+
+Why this matters in this repo
+ - The app injects templates into persistent containers (`#home-container`, `#onboarding-container`) at runtime. Waiting for module styles and hiding during insertion ensures users never see unstyled fragments while the browser applies CSS.
+
+SESSION CHECKLIST
+================================================================================
+
+At start of session:
+☐ Read this file (COPILOT_GUIDE.txt)
+☐ Note any new rules mentioned by user
+☐ Remember Rule 1 (all text from strings.json)
+☐ Remember Rule 2 (never ask to commit)
+
+When making changes:
+☐ Check if UI text needs translation
+☐ Update all 5 languages if adding new strings
+☐ Test error messages appear in user's language
+☐ Verify footer stays in place
+☐ Check for duplicate form submissions
+☐ Run `node uniformity_checks/run_all_checks.js` (detached) during dev
+☐ Before large refactor: create a backup snapshot branch (see Version Control section)
+☐ If renaming modules (profile → user_menu): ensure legacy aliases exist and toolbar calls updated
+
+
+================================================================================
+CHAPTER 2: USER INFORMATION COLLECTION - PROGRESSIVE PROFILING
+================================================================================
+
+STRATEGY: Option C - Progressive Profiling
+Collect user data gradually over time, triggered by context and user actions.
+Low friction, better UX, data gathered organically.
+
+PROGRESSIVE PROFILING APPROACH (TRIGGERS 1 & 4 SELECTED):
+
+Trigger 1: RIGHT AFTER SIGNUP (Mandatory Modal)
+- Show modal: "Complete your profile" (NOT dismissible - must complete)
+- Fields: Full name, Avatar URL (both optional but must click "Save" to proceed)
+- Context: User just created account, good time to collect info
+- Save button: Saves to profiles table, closes modal, redirects to home
+- No skip/cancel option (must engage with form)
+
+Trigger 4: PROFILE PAGE (Always Available)
+- Full profile editor accessible anytime
+- Edit any field at leisure: full_name, avatar_url, company, department, phone, bio
+- User controls what they share
+- Access via: Toolbar dropdown menu or settings
+
+IMPLEMENTATION ROADMAP (2 Triggers):
+
+Phase 1: Database Schema (FOUNDATION)
+- Add new columns to profiles table:
+  * avatar_url (text) - URL to profile picture
+  * company (text) - user's company/organization
+  * department (text) - department name
+  * phone (text) - contact number
+  * bio (text) - short user bio
+  * updated_at (timestamp)
+- Migration file: 002_extend_profiles.sql
+- Note: preferences column skipped (not needed for v1)
+
+Phase 2: Post-signup Modal (TRIGGER 1 - MANDATORY)
+- After successful signup, show modal immediately
+- Modal is NOT dismissible - user must interact
+- Required Fields:
+  * First name (MANDATORY) - separate input field
+  * Last name (MANDATORY) - separate input field
+  * Reports to email (MANDATORY) - email of manager/supervisor
+- Optional Fields:
+  * Avatar URL (optional) - file upload OR URL input OR auto-generated initials from first+last name
+- Form validation:
+  * First name: not empty
+  * Last name: not empty
+  * Reports to email: valid email format
+  * Avatar: if not provided, generate initials from first+last name
+- On submit:
+  * Save to profiles table: first_name, last_name, avatar_url, reports_to_email
+  * Trigger async email to reports_to_email: "X has declared you as their manager. Sign up here: [link]"
+  * Email includes direct signup link to onboard the manager
+  * Close modal, redirect to home page
+  * Cannot proceed until all mandatory fields are filled (form validation)
+  * User onboarding strategy: Each user invites their manager → Manager invites their manager → Viral growth up org hierarchy
+  * Modal component: signup_complete_modal.html
+  * Handler JS: signup_complete_modal.js
+  * Email trigger: New function in login_auth.js (sendManagerInvitationEmail)
+
+IMPLEMENTATION NOTES (recent changes)
+- The `profile` container has been renamed to `user_menu`. The new module is at `containers/user_menu/` and exports `initUserMenu` / `openUserMenu`. Legacy aliases `initProfileModal` and `openProfileModal` are available for backwards compatibility during rollout.
+- Avatar preview behavior: avatars now use `object-fit: cover` on the preview image and the inline SVG plus-icon uses a normalized `viewBox` so the glyph fills its container. See `global/avatar/avatar_styles.css` and `global/avatar/avatar.html` for the exact markup and styles.
+- The uniformity tooling (`uniformity_checks/`) should be run during development to catch hardcoded tokens early. Use detached runs locally and `--sync` in CI.
+
+- Translations: Add modal text to strings.json (all 5 languages: first_name, last_name, reports_to_email, avatar_url labels)
+
+Phase 3: Profile Page (TRIGGER 4 - CORE)
+- New route: /profile or profile.html
+- Display current profile information
+- Editable fields: first_name, last_name, avatar_url, reports_to_email, company, department, phone, bio
+- Save button → update profiles table, update updated_at timestamp
+- Cancel button → discard changes
+- Success message confirmation
+- Note: If reports_to_email changes, send NEW invitation email to new manager email
+- Accessible from: Toolbar user dropdown menu
+- Access via: Link in footer or toolbar settings
+
+DATABASE SCHEMA - NEW FIELDS (PHASE 1):
+- first_name (TEXT, nullable) - collected in post-signup modal (Trigger 1)
+- last_name (TEXT, nullable) - collected in post-signup modal (Trigger 1)
+- avatar_url (TEXT, nullable) - collected in post-signup modal (Trigger 1)
+- reports_to_email (TEXT, nullable) - manager's email, collected in post-signup modal (Trigger 1)
+- company (TEXT, nullable) - collected in profile page (Trigger 4)
+- department (TEXT, nullable) - collected in profile page (Trigger 4)
+- phone (TEXT, nullable) - collected in profile page (Trigger 4)
+- bio (TEXT, nullable) - collected in profile page (Trigger 4)
+- updated_at (TIMESTAMP) - auto-updated on profile changes
+
+ONBOARDING STRATEGY - VIRAL GROWTH:
+The system grows one person at a time:
+1. User A signs up → fills modal (first name, last name, avatar, reports_to: manager@email.com)
+2. System sends email to manager@email.com: "User A declared you as their manager"
+3. Manager signs up → fills modal (first name, last name, avatar, reports_to: director@email.com)
+4. System sends email to director@email.com: "Manager declared you as their manager"
+5. Director signs up → continues chain up organizational hierarchy
+- Result: System populated organically through manager invitation chain
+- No admin pre-seeding required
+
+CURRENT STATUS:
+✅ Email: Required field, unique
+✅ Language: Detected on first visit, saved in profiles
+⏳ PHASE 1: Database schema (002_extend_profiles.sql - all columns + comments) - COMPLETED
+⏳ PHASE 2: Post-signup modal (Trigger 1) - Fields: first_name, last_name, avatar_url, reports_to_email
+⏳ PHASE 3: Profile page (Trigger 4) - All editable fields
+❌ Phases 4-5: Not planned (in-context prompts, preferences skipped)
+
+DATA FLOW:
+1. User signs up with email/password → optional full_name captured
+2. Signup success → optional modal to add avatar_url
+3. User logs in → home page loaded
+4. User can click "Complete Profile" anytime
+5. Profile page shows current data + edit option
+6. Save changes → update profiles table + timestamp updated_at
+7. Other modules can query profiles to display user info
+
+VALIDATION RULES:
+- Full name: 1-100 chars, trim whitespace, require at least first name
+- Avatar URL: validate URL format, must be image MIME type
+- Company: 1-100 chars
+- Department: 1-100 chars
+- Phone: 7-15 chars, accept common formats
+- Bio: 0-500 chars
+- Email: unique, lowercase, valid format (already enforced)
+
+DATABASE MIGRATION NEEDED:
+```sql
+ALTER TABLE profiles ADD COLUMN avatar_url TEXT;
+ALTER TABLE profiles ADD COLUMN company TEXT;
+ALTER TABLE profiles ADD COLUMN department TEXT;
+ALTER TABLE profiles ADD COLUMN phone TEXT;
+ALTER TABLE profiles ADD COLUMN bio TEXT;
+ALTER TABLE profiles ADD COLUMN preferences JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE profiles ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
+```
+
+NEXT STEPS:
+1. Create Phase 1: Database migration (002_extend_profiles.sql)
+2. Implement Phase 2: Post-signup modal (signup_complete_modal.html + JS handler)
+3. Implement Phase 3: Profile editing page (profile.html + profile_init.js)
+4. Add translations for new modal/page to strings.json (all 5 languages)
+5. Test full flow: signup → modal → save → home → click profile → edit
+
+================================================================================
+CHAPTER 2: USER INFORMATION COLLECTION
+================================================================================
+
+OVERVIEW:
+This chapter covers collecting additional user profile information beyond email/password.
+Goal: Capture user details (name, profile picture, preferences, etc) after signup or 
+during profile editing.
+
+WHAT TO CAPTURE:
+- Full Name (required) - display in UI, store in profiles table
+- Avatar/Profile Picture (optional) - store URL in profiles table
+- Company/Organization (optional) - for OrgChart context
+- Department (optional) - organizational hierarchy
+- User preferences (optional) - theme, notifications, etc
+
+DATABASE SCHEMA UPDATES NEEDED:
+Current profiles table:
+  id (uuid), email (text), full_name (text), language (text), created_at (timestamp)
+
+Proposed additions:
+  - avatar_url (text) - URL to profile picture
+  - company (text) - user's company/organization
+  - department (text) - department name
+  - phone (text) - contact number
+  - preferences (jsonb) - theme, notification settings, etc
+  - updated_at (timestamp) - last profile update
+
+IMPLEMENTATION PHASES:
+Phase 1: Extend signup form to collect full_name (already captured)
+Phase 2: Add avatar upload/URL field
+Phase 3: Add company/department fields
+Phase 4: Add user preferences (theme, notifications)
+Phase 5: Create profile editing page
+
+CURRENT STATUS:
+✅ Full name already captured in signup
+✅ Stored in profiles.full_name
+⏳ Avatar upload: Not yet implemented
+⏳ Company/department: Not yet implemented
+⏳ Preferences: Not yet implemented
+⏳ Profile editor: Not yet implemented
+
+================================================================================
+Last Updated: 2025-11-22
+Current Branch: v1.0.1-onboarding-complete
+Latest Commit: chore(backup): stable snapshot v1.0.1-onboarding-complete (2025-11-22)
+
+---
+
+BACKUP SNAPSHOT (2025-11-22)
+
+Repository snapshot created as a stable checkpoint before additional refactors.
+Key items in this snapshot:
+
+- `containers/profile` moved to `containers/user_menu` with a compatibility shim
+  (`user_menu_init.js` exports `initUserMenu`/`openUserMenu` while mapping the
+  legacy `initProfileModal`/`openProfileModal` names to the new exports).
+- Uniformity tooling added under `uniformity_checks/` to detect hardcoded colors,
+  fonts, strings, scrollbar styling, and tooltip issues. The runner supports
+  detached/background execution and a `--sync` option for consolidated reports.
+- Avatar fixes: preview image uses `object-fit: cover` to fill circular placeholder
+  and inline plus SVG had its `viewBox` normalized so the plus glyph scales to
+  the button area.
+
+Branch: `backup/v1.0.1-onboarding-2025-11-22`
+Commit: `chore(backup): stable snapshot v1.0.1-onboarding-complete (2025-11-22)`
+
+================================================================================
+
+
+## Addendum: v1.0.5 (2025-11-25)
+
+This addendum contains version-specific developer guidance, release procedures, operational steps for SendGrid/hosting env updates, and quick examples for the `EMAILS` integration added in v1.0.5.
+
+### Branching & Release Procedure (v1.0.5)
+- Branch name: `v1.0.5` (or `v1.0.5-docs` if you prefer descriptive suffixes)
+- Commit message convention for release: `v1.0.5: [short description] + docs`
+- Tagging: `git tag -a v1.0.5 -m "Release v1.0.5"`
+- Push flow:
+  ```powershell
+  git checkout -b v1.0.5
+  git add docs/RELEASE_NOTES_v1.0.5.md docs/COPILOT_GUIDE_ADDENDUM_v1.0.5.md
+  git commit -m "v1.0.5: docs addendum (release notes + copilot guide updates)"
+  git tag -a v1.0.5 -m "Release v1.0.5"
+  git push -u origin v1.0.5
+  git push origin --tags
+  ```
+
+### EMAILS Integration (Developer Summary)
+- Client API (browser): `window.emailClient.sendManagerNotification(payload)`
+  - Payload shape example:
+    ```javascript
+    {
+      to: 'manager@example.com',
+      templateName: 'manager_notification', // alias OR template GUID
+      data: { managerName: 'Jill', reportName: 'Sam', company: 'Rhomberg' }
+    }
+    ```
+  - Behavior: client gathers `access_token` from `window.supabase` and POSTs to `/api/send-manager-notification` with `Authorization: Bearer <token>`.
+
+- Server (edge): `EMAILS/server/send-manager-notification.js`
+  - Validates the Supabase JWT by calling `${SUPABASE_URL}/auth/v1/user` and includes `apikey` header when available.
+  - If `templateName` looks like a GUID, the handler sets `template_id` in the SendGrid API call. If `templateName` is an alias, the handler falls back to using `html` content (from client-supplied rendered HTML or from `EMAILS/templates/manager_notification.html`).
+
+### Updating SendGrid Key (Vercel example)
+- Via dashboard: Project → Settings → Environment Variables → edit `SENDGRID_API_KEY` → redeploy
+- Via CLI (recommended for automation):
+  ```powershell
+  vercel secrets add sendgrid-api-key-secret "sk_live_xxx..."
+  vercel env add SENDGRID_API_KEY production
+  # choose "Use existing secret" -> select the secret
+  vercel --prod --yes
+  ```
+
+### Verifying the Handler in Production
+1. Trigger the flow in the UI (onboarding or profile save).
+2. Check logs:
+  ```powershell
+  vercel logs <project-name-or-url> --since 10m --prod
+  ```
+3. Expected log entries:
+  - `POST /api/send-manager-notification 200` (or 202 from SendGrid) and a short success line
+  - No tokens in logs; only non-sensitive debug (handler trimmed verbose output in v1.0.5)
+
+### Troubleshooting Quick List
+- SendGrid 4xx on send:
+  - Verify `SENDGRID_API_KEY` value and `EMAIL_FROM` verified sender
+  - Check SendGrid account for template GUIDs (if using templates)
+- Supabase token validation failing:
+  - Ensure `SUPABASE_ANON_KEY` is set in hosting env; handler sends `apikey` header for the auth call
+- No email received:
+  - Confirm the app attempted the send (see production logs)
+  - Check SendGrid Activity / suppression lists / verified sender status
+
+### Local testing tips
+- To test locally without pushing envs to production, use a local environment variable in a PowerShell session:
+  ```powershell
+  $env:SENDGRID_API_KEY = 'sk_test_xxx'
+  python -m http.server 8000
+  # open http://localhost:8000 and exercise the UI
+  ```
+  This only affects your local session and is NOT committed.
+
+### Follow-ups (optional)
+- Add a scheduled CI/poller that validates any template GUIDs used by `EMAILS` exist in SendGrid (recommended if you move to template GUIDs permanently).
+- Add a GitHub Action smoke-test that runs after deploy to trigger a test send to a monitored mailbox and fails the workflow if delivery or API responses are invalid.
+
+---
+
+_End of addendum for v1.0.5_
+
+````================================================================================
+COPILOT GUIDE - Hello-World Project Rules & Constraints
+================================================================================
+READ THIS FILE AT THE START OF EACH SESSION!
+
+================================================================================
+RULES (STRICT - MUST FOLLOW)
+================================================================================
+
+RULE 1: UI Translation Enforcement
+- ALL visible text in the UI must come from strings.json only
+- NO hardcoded English text should ever appear to users
+- Every user-facing message must use getString() with a translation key
+- When adding new error messages or UI text, add translations for all 5 languages:
+  en, pt, de, fr, it
+
+RULE 2: Commit Authority
+- NEVER ask the user to commit changes
+- NEVER suggest committing
+- User will explicitly tell you when to commit
+- Wait for: "commit this" or similar explicit instruction
+
+RULE 3: copilot must Ask for Help When Stuck
+- When you (copilot, not the user) start running in circles making changes after changes without progress
+- Don't keep trying random fixes and going nowhere
+- Stop immediately and ask the user for help
+- Explain the problem clearly and request guidance
+- Example: Rather than trying 5+ different event handling approaches, recognize the pattern is failing and ask "I'm stuck on this - can you help me think through the architecture?"
+
+================================================================================
+PROJECT ARCHITECTURE
+================================================================================
+
+Container Pattern (PERSISTENT CONTAINERS):
+- index.html has several persistent containers used to host module HTML; these are
+  loaded and shown/hidden (not recreated) to preserve state and event listeners.
+  Typical containers present in this project:
+  1. `#login-container` - shows login/signup form
+  2. `#toolbar-container` - top navigation (user avatar, nav links)
+  3. `#onboarding-container` - shown when a user needs to complete onboarding
+  4. `#home-container` - main app content after login
+  5. `#footer-container` - always at bottom
+
+Content is injected via `innerHTML` (templates are fetched and inserted). Use the
+show/hide pattern rather than creating/destroying containers to preserve focus
+and reduce layout jank.
+
+Layout notes:
+- Use flexbox where appropriate; content containers typically take `flex: 1`.
+- Keep the footer outside of content flow so it remains visually persistent.
+
+Login Flow:
+1. User enters credentials
+2. `handleLogin()` validates and calls Supabase auth
+3. On success: app orchestration code (in `main.js`) loads toolbar/home and
+  onboarding logic if needed
+4. The login container is hidden and the appropriate content is displayed in
+  `#home-container` (templates are fetched and injected)
+
+Logout Flow:
+1. User clicks logout button in footer
+2. `login_auth.js` calls Supabase signOut
+3. `rememberedEmail` localStorage cleared
+4. App returns to login view (containers toggled), client state reset
+
+Language Support:
+- 5 languages: English (`en`), Portuguese (`pt`), German (`de`), French (`fr`), Italian (`it`)
+- On first visit: detect browser/system language → fallback to English
+- After signup: save selected language to `profiles` table
+- After login: load language from user's profile (not browser)
+- Stored in `profiles` table for persistence across sessions
+- Use `setLanguage()` / `getString()` helpers; `updateLanguageFromProfile()` updates
+  the UI language after login
+- `language_strings.json` (or `language_strings.json`) holds the flat key structure
+  `section.key` → translations for each language
+
+================================================================================
+KEY FILES & THEIR PURPOSES (v1.0.0 - Refactored Structure)
+================================================================================
+
+PROJECT STRUCTURE (high-level):
+├── index.html                      # Main shell with persistent containers
+├── config.js                       # Supabase credentials (git-ignored; generated at deploy)
+├── global/                         # Shared utilities and styles
+│   ├── global_functions.js        # DOM helpers, AvatarStore, event bus
+│   ├── global_styles.css          # CSS variables & tokens (colors, radii)
+│   └── language_manager.js        # i18n helpers, updateLanguageFromProfile()
+├── language_strings.json          # All UI translations (keys × languages)
+├── main.js                         # App orchestrator (session, container orchestration)
+├── uniformity_checks/              # Static checks for hardcoded fonts/colors/strings
+├── containers/
+│   ├── login/                      # Authentication module
+│   ├── toolbar/                    # Top navigation & avatar trigger
+│   ├── onboarding/                 # Post-signup onboarding modal
+│   ├── user_menu/                  # (previously `profile/`) user menu + settings
+│   ├── home/                       # Main app content
+│   └── footer/                     # Footer + logout
+└── migrations/                     # DB migration SQL files
+
+FILE NAMING CONVENTION:
+- `*_init.js` = module initialization (loads HTML, sets up UI)
+- `*_auth.js` = authentication logic (only in login module)
+- `*_errors.js` = error handling (standardized for each module)
+- `*_styles.css` = module-specific CSS (one per container)
+
+KEY FILES DETAILS:
+
+main.js
+- App orchestrator: initializes containers in sequence and manages session
+- Loading order: login → toolbar → home → footer (on successful auth)
+- Loads onboarding when `profiles` row is incomplete
+
+index.html
+- Main app shell with persistent containers (see Project Architecture)
+- Loads global scripts (i18n, globals, Supabase client) and module `*_init.js` files
+
+`global/language_manager.js`
+- Centralized language helpers, `getString(key)` and `updateLanguageFromProfile(lang)`
+
+`global/global_functions.js`
+- Utilities used across modules: DOM helpers, small stores (e.g., `AvatarStore`), and common event names
+
+`containers/user_menu/user_menu_init.js`
+- New location for the user menu / profile dropdown. Exports `initUserMenu`, `openUserMenu`,
+  `closeUserMenu` and provides backward-compatible aliases to the legacy `initProfileModal`/`openProfileModal` names.
+
+`uniformity_checks/`
+- Node scripts that scan the repo for hardcoded colors, fonts, strings, scrollbar styles, and tooltip problems. The runner supports detached/background execution and a `--sync` mode for consolidated reports.
+
+`containers/avatar/`
+- Avatar markup, styles and `avatar_init.js` for preview, upload, initials generation and `AvatarStore` integration.
+
+================================================================================
+MODULE INITIALIZATION PATTERN
+================================================================================
+
+Each module (login, toolbar, home, footer) follows this pattern:
+
+1. *_init.js (module initialization)
+   - Fetch HTML template
+   - Inject into container
+   - Load module styles
+   - Translate UI text from strings.json
+   - Set up event listeners
+   - Initialize submodules
+
+2. *_auth.js (if needed - authentication logic only)
+   - Pure logic functions (no DOM manipulation)
+   - Async functions for API calls
+   - Error handling with translated messages
+
+3. *_errors.js (error handling)
+   - Standardized error display functions
+   - window.showFieldError() - field-level errors
+   - window.showGeneralMessage() - general messages
+   - Translated error text via getString()
+
+4. *_styles.css (module styling)
+   - Uses CSS variables from styles.css
+   - Module-specific overrides
+   - Responsive design (max-width media queries)
+
+NOTES & BEST PRACTICES:
+- Module init functions should export a clear API (e.g. `initUserMenu`, `openUserMenu`, `closeUserMenu`).
+- When renaming modules (example: `profile` → `user_menu`) provide backward-compatible aliases in the new init file so legacy callers keep working during transition.
+- Initialization should be idempotent: calling `init*()` multiple times should not duplicate event listeners or re-insert the same DOM nodes.
+- Always `await` exported async init functions before calling their other methods. Example:
+  ```javascript
+  await initUserMenu();
+  openUserMenu();
+  ```
+- Keep UI logic (DOM) in `*_init.js` and pure business logic in `*_auth.js` or small helper modules to simplify testing.
+
+
+================================================================================
+IMPORTANT CONSTRAINTS
+================================================================================
+VERSION CONTROL & RELEASE PROCESS
+================================================================================
+
+VERSIONING WORKFLOW (For Creating New Release Checkpoints):
+When ready to create a new version checkpoint, follow this exact process:
+
+1. CREATE NEW VERSION BRANCH
+   - Branch name format: v[MAJOR].[MINOR].[PATCH]-[description]
+   - Example: v1.0.1-refactored, v1.1.0-dashboard, v2.0.0-auth-rewrite
+   - Command: git checkout -b v1.0.1-refactored
+
+2. MAKE ALL CODE CHANGES
+   - Implement features/fixes on the new branch
+   - Test thoroughly before proceeding
+   - Commit changes with descriptive messages
+
+3. UPDATE README.md WITH VERSION-SPECIFIC CHANGES
+   - Add version number and date to header
+   - Create section: "## Version v1.0.1 - [Release Date]"
+   - Document: What's new, fixes, improvements
+   - Example sections:
+     * ✅ Features Added
+     * 🐛 Bugs Fixed
+     * 🎨 UI/UX Improvements
+     * 📦 Code Refactoring
+   - Keep historical record of all versions
+
+4. UPDATE COPILOT_GUIDE.txt IF NEEDED
+   - Architecture changes
+   - File structure changes
+   - New patterns or conventions
+   - Updated constraints or rules
+
+5. COMMIT TO NEW BRANCH
+   - Commit message: "v1.0.1: [description] + docs"
+   - Include all changes: code + README + guide
+
+6. CREATE GIT TAG FOR BACKUP
+   - Tag format: v[MAJOR].[MINOR].[PATCH]
+   - Example: git tag -a v1.0.1 -m "Release v1.0.1: Refactored login module"
+   - Tags serve as permanent checkpoints
+
+7. PUSH BRANCH AND TAG
+   - Push branch: git push origin v1.0.1-refactored
+   - Push tag: git push origin v1.0.1
+
+README.md CHANGELOG SECTION TEMPLATE:
+```
+## Version History
+
+### v1.0.1 - Refactored & Polished (Nov 19, 2025)
+✅ **Features Added:**
+- Signup button now shows in signup mode
+
+🐛 **Bugs Fixed:**
+- Animation jank on password visibility toggle
+- Missing signup button element
+
+🎨 **UI/UX Improvements:**
+- Larger password bullets (30px) for better visibility
+- Smoother eye button toggle (no font-size animation)
+- Cleaner focus states (removed large outlines)
+
+📦 **Code Refactoring:**
+- Standardized file naming: load_*.js → *_init.js
+- Split login logic: login_init.js + login_auth.js
+- Removed 90+ lines of duplicate CSS
+- Centralized button colors: --color-button variable
+
+### v1.0.0 - Initial Release (Previous version)
+...
+```
+
+KEY POINTS:
+- Each version gets its own branch (preserves history)
+- Git tags mark permanent release checkpoints
+- README documents what's in each version
+- No overwriting previous versions
+- Easy to checkout old versions if needed: git checkout v1.0.0
+
+BACKUP SNAPSHOTS (Ad-hoc checkpoints)
+------------------------------------
+When you need a stable restore point during an extended refactor or before risky changes, create a backup snapshot branch.
+
+Naming convention:
+- `backup/v[MAJOR].[MINOR].[PATCH]-[short-desc]-YYYY-MM-DD` e.g. `backup/v1.0.1-onboarding-2025-11-22`.
+
+Recommended process:
+1. Create branch from current working branch: `git checkout -b backup/v1.0.1-onboarding-2025-11-22`
+2. Stage all intended files and commit with a clear message: `chore(backup): stable snapshot v1.0.1-onboarding-2025-11-22`
+3. Push the branch to remote: `git push origin backup/v1.0.1-onboarding-2025-11-22`
+4. Optionally create an annotated tag if you want a permanent named checkpoint: `git tag -a backup-v1.0.1-onboarding-2025-11-22 -m "Backup snapshot"` then `git push origin backup-v1.0.1-onboarding-2025-11-22`
+
+NOTES:
+- Backup branches are lightweight and intended for fast restore or bisecting; they are not official releases.
+- Only create/push backup branches when a human approves the snapshot. Automated agents or CI should not push checkpoint branches without explicit authorization.
+
+
+================================================================================
+IMPORTANT CONSTRAINTS
+❌ Hardcode English text visible to users
+❌ Ask user to commit
+❌ Remove persistent containers from index.html
+❌ Store passwords in localStorage (only email is ok)
+❌ Skip error messages - always use translated strings
+❌ Load auth users without checking profiles table first
+
+Do These:
+✅ Use getString() for all visible UI text
+✅ Add all 5 language translations when adding new strings
+✅ Check email exists in profiles before password validation
+✅ Use persistent container pattern (hide/show, don't create/destroy)
+✅ Wait for Supabase.ready before using auth functions
+✅ Always preventDefault() on form submit to prevent double-submission
+✅ Keep footer in place during mode switches and navigation
+
+================================================================================
+COMMON PATTERNS
+================================================================================
+
+Pattern 1: Using Translations
+```javascript
+const message = getString('login.email_not_found');
+showGeneralMessage(message);
+```
+
+Pattern 2: Adding New Translations
+1. Add key to strings.json with all 5 languages
+2. Use getString('key') in code
+3. Test all 5 languages
+
+Pattern 3: Handling Async Supabase
+```javascript
+if (!window.supabaseReady) {
+  await new Promise(resolve => {
+    const check = setInterval(() => {
+      if (window.supabaseReady) {
+        clearInterval(check);
+        resolve();
+      }
+    }, 100);
+    setTimeout(() => clearInterval(check), 5000);
+  });
+}
+```
+
+Pattern 4: Switching Containers
+```javascript
+document.getElementById('login-container').style.display = 'none';
+document.getElementById('shell-container').style.display = 'flex';
+```
+
+Pattern 5: Running uniformity checks (detached by default)
+```bash
+# Run checks in background (non-blocking) - recommended during local work
+node uniformity_checks/run_all_checks.js &
+
+# For synchronous consolidated run (CI or before final commit):
+node uniformity_checks/run_all_checks.js --sync
+```
+
+Pattern 6: Backward-compatible renames / aliasing
+```javascript
+// New module provides legacy names for a smooth transition
+export function initUserMenu() { /* ... */ }
+export const initProfileModal = initUserMenu; // legacy alias
+```
+
+
+================================================================================
+DEBUGGING TIPS
+================================================================================
+
+Issue: Double login submission
+- Check if both button click AND form submit listeners exist
+- Remove duplicate listeners, use form submit only
+
+Issue: Remember-me not working after logout
+- Verify rememberedEmail is set in localStorage on login
+- Check that checkRememberedUser() is called after form HTML loads
+- Ensure load_login.js is loaded in index.html
+
+Issue: Footer moves during transitions
+- Use persistent container pattern, not dynamic creation
+- Keep flex layout consistent
+- Don't use position: fixed on footer
+
+Issue: English text appearing
+- Check for hardcoded text in HTML files
+- Use getString() for all dynamic text
+- Verify strings.json has complete translations
+
+Issue: SVG icons too small / not filling their container
+- Inspect the `viewBox` attribute — if the path coordinates sit in a small bbox within the viewBox, the glyph will appear tiny. Normalize the viewBox to the path's bbox or edit the path to fit the full 0 0 width height box.
+- Ensure CSS makes SVG fill the button: `svg { width: 100%; height: 100%; display:block; }` and the container has explicit width/height.
+
+Issue: Uniformity checks report false positives
+- Common false positives: CSS custom properties (`--color-...`), template literals with `${...}`, files in the `uniformity_checks/` folder itself.
+- Use the `--sync` mode to run checks in CI; use the detached background runs during local work to avoid blocking.
+
+Issue: Background processes terminate on terminal close (Windows PowerShell)
+- When running detached tasks locally on Windows PowerShell 5.1, prefer using `Start-Job` or run via an external terminal window to avoid losing the process. Alternatively run checks in CI using `--sync`.
+
+
+================================================================================
+PREVENTING FOUC (Flash Of Unstyled Content) - ALWAYS FOLLOW
+================================================================================
+FOUC is a brief flash of unstyled or jumbled HTML before styles are applied. Because this project injects templates at runtime into persistent containers, follow these rules to avoid visual flashes and layout jitter:
+
+1) Load critical CSS early and wait for it
+ - For module-specific styles inserted at runtime, wait for the stylesheet `load` event before inserting markup.
+ - Example pattern (used in `containers/*/*_init.js`):
+```javascript
+function loadStyles(href, id){
+  return new Promise(resolve => {
+    const existing = document.getElementById(id);
+    if (existing && (existing.sheet || existing.__loaded)) return resolve();
+    if (existing){ existing.addEventListener('load', ()=>resolve()); existing.addEventListener('error', ()=>resolve()); return; }
+    const link = document.createElement('link');
+    link.id = id; link.rel = 'stylesheet'; link.href = href;
+    link.addEventListener('load', ()=>{ link.__loaded = true; resolve(); });
+    link.addEventListener('error', ()=>resolve());
+    document.head.appendChild(link);
+  });
+}
+```
+
+2) Hide while inserting (avoid visible reflow)
+ - Temporarily set `visibility: hidden` (or `opacity: 0`) on the container while fetching/inserting the template, then restore after styles applied.
+ - This prevents the user from seeing intermediate unstyled markup.
+
+3) Provide a small fade-in on reveal (optional smoothing)
+ - Apply `transition: opacity 160ms ease` and animate from `opacity:0` → `1` after styles are applied to mask remaining timing edges.
+
+4) Use a `no-fouc` helper class for global cases
+ - Add `.no-fouc { visibility: hidden }` to a small inline critical CSS or global stylesheet and remove the class in JS when the app is ready.
+
+5) Consider `preload` for frequently used module styles
+ - Example: `<link rel="preload" href="containers/user_profile/user_profile_styles.css" as="style" onload="this.rel='stylesheet'">` for modules the user opens frequently. Use sparingly.
+
+6) Inline minimal critical CSS only when necessary
+ - If a module needs a tiny set of rules for the initial layout, inline those rules in `index.html` or a small `critical.css` to keep FOUC impossible while larger styles load.
+
+7) Centralize the pattern in module init helpers
+ - Keep `loadStyles()` and the hide-while-insert pattern in your module init template so all modules share the same guard against FOUC.
+
+Why this matters in this repo
+ - The app injects templates into persistent containers (`#home-container`, `#onboarding-container`) at runtime. Waiting for module styles and hiding during insertion ensures users never see unstyled fragments while the browser applies CSS.
+
+SESSION CHECKLIST
+================================================================================
+
+At start of session:
+☐ Read this file (COPILOT_GUIDE.txt)
+☐ Note any new rules mentioned by user
+☐ Remember Rule 1 (all text from strings.json)
+☐ Remember Rule 2 (never ask to commit)
+
+When making changes:
+☐ Check if UI text needs translation
+☐ Update all 5 languages if adding new strings
+☐ Test error messages appear in user's language
+☐ Verify footer stays in place
+☐ Check for duplicate form submissions
+☐ Run login/logout flow to verify
+☐ Run `node uniformity_checks/run_all_checks.js` (detached) during dev
+☐ Before large refactor: create a backup snapshot branch (see Version Control section)
+☐ If renaming modules (profile → user_menu): ensure legacy aliases exist and toolbar calls updated
+
+
+================================================================================
+CHAPTER 2: USER INFORMATION COLLECTION - PROGRESSIVE PROFILING
+================================================================================
+
+STRATEGY: Option C - Progressive Profiling
+Collect user data gradually over time, triggered by context and user actions.
+Low friction, better UX, data gathered organically.
+
+PROGRESSIVE PROFILING APPROACH (TRIGGERS 1 & 4 SELECTED):
+
+Trigger 1: RIGHT AFTER SIGNUP (Mandatory Modal)
+- Show modal: "Complete your profile" (NOT dismissible - must complete)
+- Fields: Full name, Avatar URL (both optional but must click "Save" to proceed)
+- Context: User just created account, good time to collect info
+- Save button: Saves to profiles table, closes modal, redirects to home
+- No skip/cancel option (must engage with form)
+
+Trigger 4: PROFILE PAGE (Always Available)
+- Full profile editor accessible anytime
+- Edit any field at leisure: full_name, avatar_url, company, department, phone, bio
+- User controls what they share
+- Access via: Toolbar dropdown menu or settings
+
+IMPLEMENTATION ROADMAP (2 Triggers):
+
+Phase 1: Database Schema (FOUNDATION)
+- Add new columns to profiles table:
+  * avatar_url (text) - URL to profile picture
+  * company (text) - user's company/organization
+  * department (text) - department name
+  * phone (text) - contact number
+  * bio (text) - short user bio
+  * updated_at (timestamp)
+- Migration file: 002_extend_profiles.sql
+- Note: preferences column skipped (not needed for v1)
+
+Phase 2: Post-Signup Modal (TRIGGER 1 - MANDATORY)
+- After successful signup, show modal immediately
+- Modal is NOT dismissible - user must interact
+- Required Fields:
+  * First name (MANDATORY) - separate input field
+  * Last name (MANDATORY) - separate input field
+  * Reports to email (MANDATORY) - email of manager/supervisor
+- Optional Fields:
+  * Avatar URL (optional) - file upload OR URL input OR auto-generated initials from first+last name
+- Form validation:
+  * First name: not empty
+  * Last name: not empty
+  * Reports to email: valid email format
+  * Avatar: if not provided, generate initials from first+last name
+- On submit:
+  * Save to profiles table: first_name, last_name, avatar_url, reports_to_email
+  * Trigger async email to reports_to_email: "X has declared you as their manager. Sign up here: [link]"
+  * Email includes direct signup link to onboard the manager
+  * Close modal, redirect to home page
+- Cannot proceed until all mandatory fields are filled (form validation)
+- User onboarding strategy: Each user invites their manager → Manager invites their manager → Viral growth up org hierarchy
+- Modal component: signup_complete_modal.html
+- Handler JS: signup_complete_modal.js
+- Email trigger: New function in login_auth.js (sendManagerInvitationEmail)
+
+IMPLEMENTATION NOTES (recent changes)
+- The `profile` container has been renamed to `user_menu`. The new module is at `containers/user_menu/` and exports `initUserMenu` / `openUserMenu`. Legacy aliases `initProfileModal` and `openProfileModal` are available for backwards compatibility during rollout.
+- Avatar preview behavior: avatars now use `object-fit: cover` on the preview image and the inline SVG plus-icon uses a normalized `viewBox` so the glyph fills its container. See `global/avatar/avatar_styles.css` and `global/avatar/avatar.html` for the exact markup and styles.
+- The uniformity tooling (`uniformity_checks/`) should be run during development to catch hardcoded tokens early. Use detached runs locally and `--sync` in CI.
+
+- Translations: Add modal text to strings.json (all 5 languages: first_name, last_name, reports_to_email, avatar_url labels)
+
+Phase 3: Profile Page (TRIGGER 4 - CORE)
+- New route: /profile or profile.html
+- Display current profile information
+- Editable fields: first_name, last_name, avatar_url, reports_to_email, company, department, phone, bio
+- Save button → update profiles table, update updated_at timestamp
+- Cancel button → discard changes
+- Success message confirmation
+- Note: If reports_to_email changes, send NEW invitation email to new manager email
+- Accessible from: Toolbar user dropdown menu
+- Access via: Link in footer or toolbar settings
+
+DATABASE SCHEMA - NEW FIELDS (PHASE 1):
+- first_name (TEXT, nullable) - collected in post-signup modal (Trigger 1)
+- last_name (TEXT, nullable) - collected in post-signup modal (Trigger 1)
+- avatar_url (TEXT, nullable) - collected in post-signup modal (Trigger 1)
+- reports_to_email (TEXT, nullable) - manager's email, collected in post-signup modal (Trigger 1)
+- company (TEXT, nullable) - collected in profile page (Trigger 4)
+- department (TEXT, nullable) - collected in profile page (Trigger 4)
+- phone (TEXT, nullable) - collected in profile page (Trigger 4)
+- bio (TEXT, nullable) - collected in profile page (Trigger 4)
+- updated_at (TIMESTAMP) - auto-updated on profile changes
+
+ONBOARDING STRATEGY - VIRAL GROWTH:
+The system grows one person at a time:
+1. User A signs up → fills modal (first name, last name, avatar, reports_to: manager@email.com)
+2. System sends email to manager@email.com: "User A declared you as their manager"
+3. Manager signs up → fills modal (first name, last name, avatar, reports_to: director@email.com)
+4. System sends email to director@email.com: "Manager declared you as their manager"
+5. Director signs up → continues chain up organizational hierarchy
+- Result: System populated organically through manager invitation chain
+- No admin pre-seeding required
+
+CURRENT STATUS:
+✅ Email: Required field, unique
+✅ Language: Detected on first visit, saved in profiles
+⏳ PHASE 1: Database schema (002_extend_profiles.sql - all columns + comments) - COMPLETED
+⏳ PHASE 2: Post-signup modal (Trigger 1) - Fields: first_name, last_name, avatar_url, reports_to_email
+⏳ PHASE 3: Profile page (Trigger 4) - All editable fields
+❌ Phases 4-5: Not planned (in-context prompts, preferences skipped)
+
+DATA FLOW:
+1. User signs up with email/password → optional full_name captured
+2. Signup success → optional modal to add avatar_url
+3. User logs in → home page loaded
+4. User can click "Complete Profile" anytime
+5. Profile page shows current data + edit option
+6. Save changes → update profiles table + timestamp updated_at
+7. Other modules can query profiles to display user info
+
+VALIDATION RULES:
+- Full name: 1-100 chars, trim whitespace, require at least first name
+- Avatar URL: validate URL format, must be image MIME type
+- Company: 1-100 chars
+- Department: 1-100 chars
+- Phone: 7-15 chars, accept common formats
+- Bio: 0-500 chars
+- Email: unique, lowercase, valid format (already enforced)
+
+DATABASE MIGRATION NEEDED:
+```sql
+ALTER TABLE profiles ADD COLUMN avatar_url TEXT;
+ALTER TABLE profiles ADD COLUMN company TEXT;
+ALTER TABLE profiles ADD COLUMN department TEXT;
+ALTER TABLE profiles ADD COLUMN phone TEXT;
+ALTER TABLE profiles ADD COLUMN bio TEXT;
+ALTER TABLE profiles ADD COLUMN preferences JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE profiles ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
+```
+
+NEXT STEPS:
+1. Create Phase 1: Database migration (002_extend_profiles.sql)
+2. Implement Phase 2: Post-signup modal (signup_complete_modal.html + JS handler)
+3. Implement Phase 3: Profile editing page (profile.html + profile_init.js)
+4. Add translations for new modal/page to strings.json (all 5 languages)
+5. Test full flow: signup → modal → save → home → click profile → edit
+
+================================================================================
+CHAPTER 2: USER INFORMATION COLLECTION
+================================================================================
+
+OVERVIEW:
+This chapter covers collecting additional user profile information beyond email/password.
+Goal: Capture user details (name, profile picture, preferences, etc) after signup or 
+during profile editing.
+
+WHAT TO CAPTURE:
+- Full Name (required) - display in UI, store in profiles table
+- Avatar/Profile Picture (optional) - store URL in profiles table
+- Company/Organization (optional) - for OrgChart context
+- Department (optional) - organizational hierarchy
+- User preferences (optional) - theme, notifications, etc
+
+DATABASE SCHEMA UPDATES NEEDED:
+Current profiles table:
+  id (uuid), email (text), full_name (text), language (text), created_at (timestamp)
+
+Proposed additions:
+  - avatar_url (text) - URL to profile picture
+  - company (text) - user's company/organization
+  - department (text) - department name
+  - phone (text) - contact number
+  - preferences (jsonb) - theme, notification settings, etc
+  - updated_at (timestamp) - last profile update
+
+IMPLEMENTATION PHASES:
+Phase 1: Extend signup form to collect full_name (already captured)
+Phase 2: Add avatar upload/URL field
+Phase 3: Add company/department fields
+Phase 4: Add user preferences (theme, notifications)
+Phase 5: Create profile editing page
+
+CURRENT STATUS:
+✅ Full name already captured in signup
+✅ Stored in profiles.full_name
+⏳ Avatar upload: Not yet implemented
+⏳ Company/department: Not yet implemented
+⏳ Preferences: Not yet implemented
+⏳ Profile editor: Not yet implemented
+
+================================================================================
+Last Updated: 2025-11-22
+Current Branch: v1.0.1-onboarding-complete
+Latest Commit: chore(backup): stable snapshot v1.0.1-onboarding-complete (2025-11-22)
+
+---
+
+BACKUP SNAPSHOT (2025-11-22)
+
+Repository snapshot created as a stable checkpoint before additional refactors.
+Key items in this snapshot:
+
+- `containers/profile` moved to `containers/user_menu` with a compatibility shim
+  (`user_menu_init.js` exports `initUserMenu`/`openUserMenu` while mapping the
+  legacy `initProfileModal`/`openProfileModal` names to the new exports).
+- Uniformity tooling added under `uniformity_checks/` to detect hardcoded colors,
+  fonts, strings, scrollbar styling, and tooltip issues. The runner supports
+  detached/background execution and a `--sync` option for consolidated reports.
+- Avatar fixes: preview image uses `object-fit: cover` to fill circular placeholder
+  and inline plus SVG had its `viewBox` normalized so the plus glyph scales to
+  the button area.
+
+Branch: `backup/v1.0.1-onboarding-2025-11-22`
+Commit: `chore(backup): stable snapshot v1.0.1-onboarding-complete (2025-11-22)`
+
+================================================================================
+
