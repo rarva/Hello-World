@@ -238,6 +238,30 @@ async function initLogin() {
 
   // Restore remembered user
   checkRememberedUser();
+
+  // If this page was opened with a prefill_email and return_to (from an
+  // email validate link), prefill the email field and focus password so
+  // managers can quickly sign in. Also store `return_to` in sessionStorage
+  // so we can redirect after successful login.
+  try {
+    const qp = new URLSearchParams(window.location.search || '');
+    const prefill = qp.get('prefill_email') || qp.get('email');
+    const returnTo = qp.get('return_to');
+    if (prefill) {
+      const emailEl = document.getElementById('email');
+      if (emailEl) {
+        emailEl.value = decodeURIComponent(String(prefill));
+        const pwd = document.getElementById('password');
+        if (pwd) {
+          // focus the password after a short delay so it feels natural
+          setTimeout(() => { try { pwd.focus(); } catch (e) {} }, 120);
+        }
+      }
+    }
+    if (returnTo) {
+      try { sessionStorage.setItem('postLoginReturnTo', returnTo); } catch (e) { /* ignore */ }
+    }
+  } catch (e) { /* ignore parsing errors */ }
 }
 
 /**

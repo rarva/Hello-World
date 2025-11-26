@@ -151,6 +151,18 @@ function handleAuthSuccess(user, profileData = null) {
     }
   }
 
+  // If a post-login return location was set (e.g. from an email validate
+  // link), navigate there now so validate flow can complete.
+  try {
+    const returnTo = sessionStorage.getItem('postLoginReturnTo');
+    if (returnTo) {
+      sessionStorage.removeItem('postLoginReturnTo');
+      // If it's a relative path, navigate within the app. Use replace to
+      // avoid leaving a stale state in history.
+      try { window.location.replace(returnTo); return; } catch (e) { window.location.href = returnTo; return; }
+    }
+  } catch (e) { /* ignore */ }
+
   // Prefetch avatar into memory (convert to data URL) to avoid extra network fetches
   (async () => {
     try {

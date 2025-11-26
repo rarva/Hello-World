@@ -11,11 +11,23 @@
     try {
       const qp = new URLSearchParams(window.location.search || '');
       const token = qp.get('token');
+      const email = qp.get('email');
       if (!token) {
         setMessage('Missing token', 'No token was provided in the URL.');
         return;
       }
+      // If the user is not authenticated, redirect to the app login with
+      // the manager email prefilled and return_to set so we come back here
+      // after successful login.
+      const isLoggedIn = !!(window.currentUser || (window.supabase && typeof window.supabase.auth?.getSession === 'function' && await (async()=>{ try{ const s = await window.supabase.auth.getSession(); return s?.data?.session; }catch(e){return null;} })()));
+      if (!isLoggedIn) {
+        const returnTo = window.location.pathname + window.location.search;
+        const target = '/' + `?prefill_email=${encodeURIComponent(email||'')}&return_to=${encodeURIComponent(returnTo)}`;
+        window.location.replace(target);
+        return;
+      }
 
+      // Authenticated: proceed to validate token by calling respond endpoint
       setMessage('Validating request…', 'Contacting server to validate this request.');
 
       const res = await fetch('/api/manager-requests/respond', {
