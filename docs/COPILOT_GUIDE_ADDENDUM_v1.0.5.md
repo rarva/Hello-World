@@ -23,7 +23,7 @@ This addendum contains version-specific developer guidance, release procedures, 
     {
       to: 'manager@example.com',
       templateName: 'manager_notification', // alias OR template GUID
-      data: { managerName: 'Jill', reportName: 'Sam', company: 'Rhomberg' }
+      data: { managerName: 'Jill', userName: 'Sam', company: 'Rhomberg' }
     }
     ```
   - Behavior: client gathers `access_token` from `window.supabase` and POSTs to `/api/send-manager-notification` with `Authorization: Bearer <token>`.

@@ -351,41 +351,60 @@ async function handleOnboardingSubmit(e) {
     syncToolbarAvatar(avatarUrl, formData.firstName, formData.lastName);
     // Notify manager about new user (best-effort, non-blocking)
     try {
-      if (formData.reportsToEmail && window.emailClient && typeof window.emailClient.sendManagerNotification === 'function') {
+      if (formData.reportsToEmail) {
         (async () => {
-          const templateData = {
+          const payload = {
+            manager_email: formData.reportsToEmail,
+            user_id: user.id,
+            userName: `${formData.firstName} ${formData.lastName}`,
             managerName: '',
-            reportName: `${formData.firstName} ${formData.lastName}`,
-            company: window.APP_COMPANY_NAME || 'Rhomberg',
-            userEmail: user.email
+            company: window.APP_COMPANY_NAME || 'Rhomberg'
           };
 
-          // Try to fetch the local HTML template and perform simple placeholder replacement.
-          // Fallback to a minimal HTML body if the template cannot be loaded.
-          let html = null;
-          try {
-            const tplRes = await fetch('EMAILS/templates/manager_notification.html');
-            if (tplRes.ok) {
-              let tpl = await tplRes.text();
-              html = tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (m, key) => (templateData[key] != null ? templateData[key] : ''));
+          const sendViaServer = async () => {
+            try {
+              const token = (window.currentUser && (window.currentUser.access_token || window.currentUser.user?.access_token)) || null;
+              const headers = { 'Content-Type': 'application/json' };
+              if (token) headers['Authorization'] = 'Bearer ' + token;
+              const res = await fetch('/api/manager-requests', { method: 'POST', headers, body: JSON.stringify(payload) });
+              const text = await res.text().catch(() => '');
+              let parsed = null;
+              try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
+              console.info('manager-requests: server response', { status: res.status, body: parsed || text.slice(0,300) });
+              if (!res.ok) return false;
+              console.log('manager request created via server');
+              return true;
+            } catch (err) {
+              console.warn('server create manager-request failed, falling back to client send', err && (err.message || err.name));
+              return false;
             }
-          } catch (e) {
-            // ignore and fallback
-          }
-          if (!html) {
-            html = `<div><strong>${templateData.reportName}</strong> has been added as a direct report to ${templateData.company}.</div>`;
-          }
+          };
 
-          window.emailClient.sendManagerNotification({
-            recipient_email: formData.reportsToEmail,
-            subject: (typeof getString === 'function') ? getString('emails.manager_notification.subject') : 'You have a new report',
-            html,
-            templateData // keep for potential future use on server
-          }).then(res => {
-            console.log('manager notification queued:', res && (res.ok || res.status) ? res : 'unknown');
-          }).catch(err => {
-            console.warn('manager notification failed (non-blocking):', err);
-          });
+          const serverOk = await sendViaServer();
+          if (!serverOk && window.emailClient && typeof window.emailClient.sendManagerNotification === 'function') {
+            try {
+              let html = null;
+              try {
+                const tplRes = await fetch('EMAILS/templates/manager_notification.html');
+                if (tplRes.ok) {
+                  let tpl = await tplRes.text();
+                  html = tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (m, key) => (payload[key] != null ? payload[key] : ''));
+                }
+              } catch (e) {}
+              if (!html) html = `<div><strong>${payload.userName}</strong> has been added as a direct report to ${payload.company}.</div>`;
+
+              window.emailClient.sendManagerNotification({
+                recipient_email: payload.manager_email,
+                subject: (typeof getString === 'function') ? getString('emails.manager_notification.subject') : 'You have a new report',
+                html,
+                templateData: payload
+              }).then(res => {
+                console.log('manager notification queued (fallback):', res && (res.ok || res.status) ? res : 'unknown');
+              }).catch(err => {
+                console.warn('manager notification failed (fallback):', err);
+              });
+            } catch (e) { /* non-fatal */ }
+          }
         })();
       }
     } catch (e) { /* non-fatal */ }

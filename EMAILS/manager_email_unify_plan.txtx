@@ -1,0 +1,47 @@
+One-line summary: unify all manager-notification sends through a single server path that always renders manager_notification.html (no SendGrid templates), remove Supabase auth checks from the send endpoint, keep DB token rows, and make the validate link land managers on the app login with their email prefilled and password focused — after login the app routes them to the Requests container to accept/decline.
+
+Goal
+
+Unify: Both onboarding and profile-update use the same send procedure and same HTML template.
+Render Server-side: Always send manager_notification.html as inline HTML (no SendGrid template_id).
+Login-first Validate UX: Clicking the email opens the app login/signup surface with email prefilled and password focused; after successful auth, show Requests container.
+Security: Keep respond (accept/decline) authenticated and verify token/email server-side.
+High-level Flow
+
+User updates profile or completes onboarding → frontend POSTs to manager-requests.
+manager-requests (canonical server handler) creates manager_requests DB row with token_hash + expires_at, renders manager_notification.html substituting placeholders, sends inline HTML to SendGrid.
+Manager clicks email button → browser opens https://<APP>/requests/validate?token=<token>&email=<manager_email>.
+validate page pre-fills email, focuses password, calls GET /api/check-user?email=... to decide login vs signup UI.
+After login/signup, app redirects to Requests container which loads pending requests for the authenticated manager. Respond endpoint enforces auth and token verification.
+Concrete Implementation Steps
+
+Canonical sender: Edit manager-requests.js — remove send-time Supabase JWT validation, keep DB insert, render manager_notification.html on server and send that HTML via SendGrid REST.
+Single callsite: Edit onboarding_init.js and user_profile_init.js — always POST the same payload to manager-requests. Remove client-side template fetch/fallback for manager notifications (or keep only as non-authoritative fallback that calls the same endpoint).
+Validate link: Ensure manager-requests.js builds validateLink as https://<APP_BASE>/requests/validate?token=<token>&email=<manager_email>.
+Login/signup landing: Add/modify index.html (and its init script) — read email query param, prefill email input, focus password field, call GET /api/check-user?email=... and show login vs signup UI accordingly; after auth redirect to Requests container.
+Check-user endpoint: Add GET /api/check-user?email=... that returns { exists: true|false } (used only to decide which UI to show).
+Respond security: Keep/enforce Supabase auth checks in respond-manager-request.js — require signed-in manager email matches manager_email on DB row or the provided token is valid and not expired; mark tokens single-use.
+Cleanup: Simplify or remove send-manager-notification.js and streamline email_client.js to post to the canonical endpoint if you want a client wrapper.
+Docs/envs: Update README.md and vercel_env_instructions.txt to note SENDGRID_API_KEY, EMAIL_FROM, and APP_BASE_URL. Note that send endpoint no longer validates Supabase tokens; respond still does.
+Files to edit (one-line each)
+
+manager-requests.js: canonical send + template render + DB insert; remove send-time Supabase auth.
+manager_notification.html: ensure placeholders: {{validateLink}}, {{userName}}, {{managerName}}, {{company}}, {{expiresAt}}.
+onboarding_init.js: POST to manager-requests.
+user_profile_init.js: POST to manager-requests.
+index.html (+ init script): prefill email, focus password, call GET /api/check-user, redirect post-login to Requests.
+api/check-user (new): returns { exists: boolean } for given email.
+respond-manager-request.js: enforce auth + token/email match before changing status.
+send-manager-notification.js and email_client.js: simplify/remove to avoid duplicate paths.
+Key Assumptions
+
+Keep DB insertion for manager_requests (tokens + expiry) so token-based validate flow remains (recommended).
+Send endpoint will be callable from the client (no Supabase token required at send time).
+respond endpoint stays strictly authenticated.
+Risks & Mitigations
+
+Abuse / spam: Public send endpoint can be misused — mitigate with CORS restriction to your domain, simple rate-limiting, a custom header check, and server logging/monitoring.
+Privacy leak: GET /api/check-user reveals whether an email exists — mitigate with rate-limiting and CORS; consider obfuscating responses if necessary.
+Wrong account: Manager may sign in with a different email; server must verify signed-in user email matches manager_email before accepting/declining and show a clear UI message if mismatch.
+SendGrid limits / errors: Add retry/backoff and log non-2xx responses; monitor SendGrid usage.
+XSS in templates: Server-side rendering must HTML-escape substituted values.

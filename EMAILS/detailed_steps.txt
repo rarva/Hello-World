@@ -126,14 +126,14 @@ Step C — Add client wrapper (EMAILS/client/email_client.js)
     - Add this file to the build (load in `index.html` or module import in existing front-end code).
 
 Step D — Add template & docs
-  - `EMAILS/templates/manager_notification.html`: a simple HTML file with placeholders, e.g. `{{managerName}}`, `{{reportName}}`.
+  - `EMAILS/templates/manager_notification.html`: a simple HTML file with placeholders, e.g. `{{managerName}}`, `{{userName}}`.
   - `EMAILS/README.md`: document required env vars, quick curl examples, and test instructions (see "Testing" below).
 
 Step E — Wire integration points (onboarding & profile)
   E.1 Onboarding: `containers/onboarding/onboarding_init.js`
     - Locate `handleOnboardingSubmit` where the profile is stored with Supabase.
     - After a successful insert/update to `profiles` and when the profile contains a manager email (`reports_to_email`), call:
-      window.emailClient.sendManagerNotification({ recipient_email: reportsToEmail, subject: 'You are now a manager', templateName: 'manager_notification', templateData: { managerName, reportName, company: 'Rhomberg' } })
+      window.emailClient.sendManagerNotification({ recipient_email: reportsToEmail, subject: 'You are now a manager', templateName: 'manager_notification', templateData: { managerName, userName, company: 'Rhomberg' } })
 
   E.2 Profile Save: `containers/user_profile/user_profile_init.js`
     - After a successful UPDATE to the user's profile and when `reports_to_email` changed (compare snapshot), call the same `window.emailClient.sendManagerNotification(...)`.

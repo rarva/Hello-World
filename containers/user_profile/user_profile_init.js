@@ -373,6 +373,9 @@
 								reports_to_email: get('#reports_to_email') || null
 							};
 
+							// Debug: log the collected update payload so console shows activity when Save is clicked
+							try { console.info('user_profile: save clicked', Object.assign({}, update)); } catch(e) { /* ignore */ }
+
 							// Clean nulls (supabase doesn't like undefined in updates)
 							Object.keys(update).forEach(k => { if (update[k] === null) delete update[k]; });
 
@@ -389,10 +392,21 @@
 							} catch(e){ console.warn('user_profile: failed to read avatar preview', e); }
 
 							// If supabase is available, persist the profile row
+							let prevReports = null;
 							if (window.supabase && window.currentUser) {
 								try{
 									const id = window.currentUser.id || window.currentUser.user?.id || window.currentUser.sub || window.currentUser.uid;
 									if (!id) throw new Error('no-user-id');
+									// Attempt to read current reports_to_email before update so we can detect changes
+									try {
+										const { data: existingProfile, error: fetchErr } = await window.supabase
+											.from('profiles')
+											.select('reports_to_email')
+											.eq('id', id)
+											.single();
+										if (!fetchErr && existingProfile) prevReports = existingProfile.reports_to_email || null;
+									} catch (e) { /* non-fatal */ }
+
 									if (Object.keys(update).length > 0) {
 										const { data: updated, error } = await window.supabase
 											.from('profiles')
@@ -412,28 +426,67 @@
 								// If supabase not present, store on window for manual inspection
 								window.currentProfileData = Object.assign(window.currentProfileData||{}, update);
 							}
+							// Notify manager about update (best-effort, non-blocking) only if reports_to changed
+							try {
+								const managerEmail = update.reports_to_email || null;
+								const changed = (managerEmail && String(managerEmail || '') !== String(prevReports || ''));
+								if (changed) {
+									(async () => {
+										// Send a manager request to the server (best-effort). Build payload then log non-sensitive fields.
+										const payload = {
+											manager_email: managerEmail,
+											user_id: window.currentUser && (window.currentUser.id || window.currentUser.user?.id),
+											userName: update.full_name || `${update.first_name||''} ${update.last_name||''}`.trim(),
+											managerName: '',
+											company: window.APP_COMPANY_NAME || 'Rhomberg'
+										};
+										try { console.info('manager-requests: preparing payload', { manager_email: payload.manager_email, user_id: payload.user_id }); } catch(e){}
 
-														// Notify manager about update (best-effort, non-blocking)
-														try {
-															const managerEmail = update.reports_to_email || null;
-															if (managerEmail && window.emailClient && typeof window.emailClient.sendManagerNotification === 'function') {
-																try {
-																	window.emailClient.sendManagerNotification({
-																		recipient_email: managerEmail,
-																		subject: (typeof getString === 'function') ? getString('emails.manager_notification.subject') : 'You have a new report',
-																		templateName: 'manager_notification',
-																		templateData: {
-																			managerName: '',
-																			reportName: update.full_name || `${update.first_name||''} ${update.last_name||''}`.trim(),
-																			company: window.APP_COMPANY_NAME || 'Rhomberg',
-																			userEmail: (window.currentUser && (window.currentUser.email || window.currentUser.user?.email)) || ''
-																		}
-																	}).then(res => {
-																		console.log('manager notification queued:', res && (res.ok || res.status) ? res : 'unknown');
-																	}).catch(err => { console.warn('manager notification failed (non-blocking):', err); });
-																} catch (e) { /* swallow */ }
-															}
-														} catch (e) { /* non-fatal */ }
+										// Try server create first
+										try {
+											// Prefer retrieving a fresh access token from Supabase client if available
+											let token = null;
+											try {
+												if (window.supabase && window.supabase.auth) {
+													if (typeof window.supabase.auth.getSession === 'function') {
+														const s = await window.supabase.auth.getSession();
+														token = s?.data?.session?.access_token || null;
+													} else if (typeof window.supabase.auth.session === 'function') {
+														token = window.supabase.auth.session()?.access_token || null;
+													}
+												}
+											} catch (e) { /* ignore and fallback */ }
+											// Fallback to any legacy currentUser token if present
+											if (!token && window.currentUser) token = window.currentUser.access_token || window.currentUser.user?.access_token || null;
+
+											const headers = { 'Content-Type': 'application/json' };
+											if (token) headers['Authorization'] = 'Bearer ' + token;
+											const res = await fetch('/api/manager-requests', { method: 'POST', headers, body: JSON.stringify(payload) });
+											try { console.info('manager-requests: sent fetch, awaiting response', { url: '/api/manager-requests', method: 'POST' }); } catch(e){}
+											const text = await res.text().catch(() => '');
+											let parsed = null;
+											try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
+											console.info('manager-requests: server response', { status: res.status, body: parsed || text.slice(0,300) });
+											if (!res.ok) throw new Error('server_failed');
+											console.log('manager request created via server');
+										} catch (err) {
+											// fallback to client email
+											try {
+												if (managerEmail && window.emailClient && typeof window.emailClient.sendManagerNotification === 'function') {
+													window.emailClient.sendManagerNotification({
+														recipient_email: managerEmail,
+														subject: (typeof getString === 'function') ? getString('emails.manager_notification.subject') : 'You have a new report',
+														templateName: 'manager_notification',
+														templateData: payload
+													}).then(res => {
+														console.log('manager notification queued (fallback):', res && (res.ok || res.status) ? res : 'unknown');
+													}).catch(err => { console.warn('manager notification failed (fallback):', err); });
+												}
+											} catch (e) { console.warn('manager notification fallback failed', e); }
+										}
+									})();
+								}
+							} catch (e) { /* non-fatal */ }
 
 														// Close profile after successful save
 														try { closeUserProfile(); } catch(e){ /* ignore */ }

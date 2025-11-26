@@ -28,7 +28,7 @@ Using templates
 - The handler accepts either raw `html`/`text` content or a template-based payload:
 
 ```json
-{ "recipient_email": "manager@example.com", "templateName": "<sendgrid_template_id>", "templateData": { "managerName": "Jane", "reportName": "John" } }
+{ "recipient_email": "manager@example.com", "templateName": "<sendgrid_template_id>", "templateData": { "managerName": "Jane", "userName": "John" } }
 ```
 
 Local development

@@ -13,11 +13,17 @@
   </head>
   <body>
     <div class="container">
-      <div class="header">You have a new report: {{reportName}}</div>
+      <div class="header">You have a new report: {{userName}}</div>
       <div>Hello {{managerName}},</div>
       <p>
         This is an automated notification from {{company}} to let you know that
-        <strong>{{reportName}}</strong> has been added as a direct report to your team.
+        <strong>{{userName}}</strong> has been added as a direct report to your team.
+      </p>
+      <p>
+        To view or validate this request, please click the button below. The link will expire on <strong>{{expiresAt}}</strong>.
+      </p>
+      <p style="text-align:center;margin:18px 0;">
+        <a href="{{validateLink}}" style="display:inline-block;padding:10px 16px;background:#0070f3;color:#fff;border-radius:4px;text-decoration:none;font-weight:600">View / Validate</a>
       </p>
       <p>
         If you have questions, please sign in to the application to view the full profile.

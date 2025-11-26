@@ -47,7 +47,22 @@ export default async function handler(req) {
       return jsonResponse({ error: 'missing_content' }, 400, CORS_HEADERS);
     }
 
-    const auth = req.headers.get('authorization');
+    let auth = req.headers.get('authorization');
+    // Fallback to _vercel_jwt cookie for preview deployments where Authorization header
+    // may not be forwarded by the browser or proxy. Keep behavior minimal and explicit.
+    if (!auth) {
+      try {
+        const cookieHeader = req.headers.get('cookie') || '';
+        const m = cookieHeader.split(';').map(s=>s.trim()).find(s=>s.startsWith('_vercel_jwt='));
+        if (m) {
+          const token = decodeURIComponent(m.split('=')[1] || '');
+          if (token) {
+            auth = 'Bearer ' + token;
+            console.info('send-manager-notification: using _vercel_jwt cookie as Authorization fallback');
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
     if (!auth) return jsonResponse({ error: 'missing_authorization' }, 401, CORS_HEADERS);
 
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -59,10 +74,32 @@ export default async function handler(req) {
     // Some Supabase auth endpoints require the project `apikey` header
     const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || null;
 
-    const userRes = await fetch(`${supabaseUrl.replace(/\/$/, '')}/auth/v1/user`, {
-      method: 'GET',
-      headers: Object.assign({ Authorization: auth }, supabaseAnonKey ? { apikey: supabaseAnonKey } : {})
-    });
+    // Use a fetch with timeout to avoid platform invocation hangs
+    async function fetchWithTimeout(resource, options = {}, timeout = 10000) {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      try {
+        const res = await fetch(resource, Object.assign({}, options, { signal: controller.signal }));
+        clearTimeout(id);
+        return res;
+      } catch (err) {
+        clearTimeout(id);
+        throw err;
+      }
+    }
+
+    console.info('send-manager-notification: validating_supabase_token');
+    let userRes;
+    try {
+      userRes = await fetchWithTimeout(`${supabaseUrl.replace(/\/$/, '')}/auth/v1/user`, {
+        method: 'GET',
+        headers: Object.assign({ Authorization: auth }, supabaseAnonKey ? { apikey: supabaseAnonKey } : {})
+      }, 10000);
+      console.info('send-manager-notification: supabase_token_validation_response', { status: userRes.status });
+    } catch (err) {
+      console.warn('send-manager-notification: supabase_auth_fetch_error', err && (err.name || err.message));
+      return jsonResponse({ error: 'supabase_auth_timeout' }, 504, CORS_HEADERS);
+    }
 
     if (!userRes.ok) {
       // Minimal logging on token validation failure (avoid logging response bodies)
@@ -118,19 +155,21 @@ export default async function handler(req) {
       }
     }
 
-    // Call SendGrid
+    // Call SendGrid with timeout and logging
     let sgRes;
     try {
-      sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      console.info('send-manager-notification: sending_sendgrid_email to', recipient_email);
+      sgRes = await fetchWithTimeout('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${sendgridKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
-      });
+      }, 10000);
+      console.info('send-manager-notification: sendgrid_response', { status: sgRes.status });
     } catch (err) {
-      console.error('sendgrid_request_error', err);
+      console.error('send-manager-notification: sendgrid_request_error', err && (err.name || err.message));
       return jsonResponse({ error: 'email_send_failed' }, 502, CORS_HEADERS);
     }
 
@@ -140,8 +179,8 @@ export default async function handler(req) {
       return jsonResponse({ ok: true }, 200, CORS_HEADERS);
     }
 
-    // Minimal warning for SendGrid failures; avoid logging full response bodies in production
-    try { console.warn && console.warn('sendgrid_response_not_ok', { status: sgRes.status }); } catch (e) {}
+    // Keep SendGrid failure logging minimal to avoid exposing response bodies.
+    console.warn && console.warn('sendgrid_response_not_ok', { status: sgRes.status });
     return jsonResponse({ error: 'email_send_failed', status: sgRes.status }, 502, CORS_HEADERS);
 
   } catch (err) {

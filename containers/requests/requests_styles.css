@@ -1,0 +1,7 @@
+.requests-container { max-width: 800px; margin: 16px auto; padding: 12px; border: 1px solid #eee; background: #fff }
+.requests-header h2 { margin: 0 0 8px 0; font-size: 18px }
+.requests-body { max-height: 360px; overflow:auto; padding:8px }
+.request-item { border-bottom:1px solid #f0f0f0; padding:8px 0 }
+.request-actions { margin-top:8px }
+.request-actions button { margin-right:8px }
+.requests-footer { text-align:right; margin-top:12px }
