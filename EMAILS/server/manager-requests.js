@@ -55,10 +55,49 @@ export default async function handler(req) {
     const { manager_email, user_id, userName, managerName, company } = body || {};
     if (!isValidEmail(manager_email)) return jsonResponse({ error: 'invalid_manager_email' }, 400);
 
-    // NOTE: per project decision, the send endpoint is now public and does not
-    // validate Supabase access tokens here. The respond (accept/decline)
-    // endpoint still requires authentication and token verification.
-    const supabaseUrl = process.env.SUPABASE_URL || '';
+    let auth = req.headers.get('authorization');
+    // Fallback: some deployments set a _vercel_jwt cookie for preview auth flows.
+    // If the Authorization header is missing, try to extract the cookie and use it.
+    if (!auth) {
+      try {
+        const cookieHeader = req.headers.get('cookie') || '';
+        const m = cookieHeader.split(';').map(s=>s.trim()).find(s=>s.startsWith('_vercel_jwt='));
+        if (m) {
+          const token = decodeURIComponent(m.split('=')[1] || '');
+          if (token) {
+            auth = 'Bearer ' + token;
+            console.info('manager-requests: using _vercel_jwt cookie as Authorization fallback');
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
+    if (!auth) return jsonResponse({ error: 'missing_authorization' }, 401);
+
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || null;
+    if (!supabaseUrl) return jsonResponse({ error: 'server_misconfigured' }, 500);
+
+    // Validate the caller's token with Supabase Auth endpoint and log progression
+    console.info('manager-requests: validating_supabase_token');
+    let userRes;
+    try {
+      userRes = await fetchWithTimeout(`${supabaseUrl.replace(/\/$/, '')}/auth/v1/user`, {
+        method: 'GET',
+        headers: Object.assign({ Authorization: auth }, supabaseAnonKey ? { apikey: supabaseAnonKey } : {})
+      }, 10000);
+      console.info('manager-requests: supabase_token_validation_response', { status: userRes.status });
+    } catch (err) {
+      console.warn('manager-requests: supabase_auth_fetch_error', err && (err.name || err.message));
+      return jsonResponse({ error: 'supabase_auth_timeout' }, 504);
+    }
+    if (!userRes.ok) {
+      console.info('manager-requests: supabase_token_validation_failed', { status: userRes.status });
+      return jsonResponse({ error: 'invalid_token' }, 401);
+    }
+
+    const user = await userRes.json();
+    const callerId = user?.id;
+    if (!callerId) return jsonResponse({ error: 'invalid_user' }, 401);
 
     // Generate a single-use token and its hash
     const rand = crypto.getRandomValues(new Uint8Array(32));
@@ -71,8 +110,8 @@ export default async function handler(req) {
       console.info('manager-requests: inserting_manager_request');
       const insertRes = await fetchWithTimeout(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/manager_requests`, {
         method: 'POST',
-          headers: Object.assign({ 'Content-Type': 'application/json' }, process.env.SUPABASE_ANON_KEY ? { apikey: process.env.SUPABASE_ANON_KEY } : {}),
-          body: JSON.stringify({ requester_id: callerId, manager_email, token_hash: tokenHash, expires_at: expiresAt, status: 'pending' })
+        headers: Object.assign({ 'Content-Type': 'application/json' }, supabaseAnonKey ? { apikey: supabaseAnonKey } : {}),
+        body: JSON.stringify({ requester_id: callerId, manager_email, token_hash: tokenHash, expires_at: expiresAt, status: 'pending' })
       }, 10000);
       console.info('manager-requests: manager_requests_insert_response', { status: insertRes.status });
       if (!insertRes.ok) {
@@ -96,36 +135,8 @@ export default async function handler(req) {
         if (host) baseUrl = `${proto}://${host}`;
       } catch (e) { baseUrl = ''; }
     }
-    const validateLink = `${(baseUrl || '').replace(/\/$/, '')}/requests/validate?token=${token}&email=${encodeURIComponent(manager_email)}`;
+    const validateLink = `${(baseUrl || '').replace(/\/$/, '')}/requests/validate?token=${token}`;
 
-    // Render the server-side HTML template for the manager notification.
-    // Prefer fetching the project's static template via the public app base URL.
-    let renderedHtml = null;
-    try {
-      const tplUrl = (baseUrl || '').replace(/\/$/, '') + '/EMAILS/templates/manager_notification.html';
-      const tplRes = await fetchWithTimeout(tplUrl, { method: 'GET' }, 5000);
-      if (tplRes.ok) {
-        let tpl = await tplRes.text();
-        const escapeHtml = (s) => String(s == null ? '' : s)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-        const replacements = {
-          validateLink,
-          userName: safeUserName,
-          managerName: safeManagerName,
-          company: company || '',
-          expiresAt
-        };
-        renderedHtml = tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (m, key) => escapeHtml(replacements[key]));
-      }
-    } catch (e) {
-      console.warn('manager-requests: template_fetch_error', e && (e.message || e.name));
-    }
-
-    // If template fetch failed, fall back to previous inline HTML composition.
     // Send the email directly using SendGrid (reuse existing approach)
     const sendgridKey = process.env.SENDGRID_API_KEY;
     const emailFrom = process.env.EMAIL_FROM;
@@ -142,11 +153,11 @@ export default async function handler(req) {
       personalizations: [{ to: [{ email: manager_email }] }],
       from: { email: emailFrom },
       subject,
-      content: [ { type: 'text/html', value: renderedHtml || (`${greeting}<br/><br/>` +
+      content: [ { type: 'text/html', value: `${greeting}<br/><br/>` +
         `<strong>${safeUserName || ''}</strong> has been added as a direct report to ${company || ''}.<br/><br/>` +
         `<a href="${validateLink}" style="display:inline-block;padding:10px 14px;background:#0070f3;color:#fff;border-radius:4px;text-decoration:none">View / Validate</a>` +
         `<div style="margin-top:12px;font-size:12px;color:#666">If the button above does not work, open this link in your browser:<br/><a href="${validateLink}">${validateLink}</a></div>` +
-        `<p style="color:#666;font-size:12px">This link expires at ${expiresAt}</p>`)) } ]
+        `<p style="color:#666;font-size:12px">This link expires at ${expiresAt}</p>` } ]
     };
 
     let sgRes;
