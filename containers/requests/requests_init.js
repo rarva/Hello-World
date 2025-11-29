@@ -1,5 +1,8 @@
 (function () {
   const tplPath = 'containers/requests/requests.html';
+  // Keep last fetched data so we can re-render on language changes
+  let __requests_lastData = { items: [] };
+  let __requests_langBound = false;
 
   async function loadTemplate() {
     const r = await fetch(tplPath);
@@ -110,109 +113,131 @@
 
     const list = document.getElementById('requests-list') || mount.querySelector('#requests-list');
     if (!list) return;
-    list.innerHTML = '';
+    // remember data for later re-renders on language change
+    __requests_lastData = data || { items: [] };
+    // bind language change listener once
+    if (!__requests_langBound) {
+      __requests_langBound = true;
+      try {
+        window.addEventListener('languageChanged', () => {
+          try {
+            const node = document.getElementById('requests-container');
+            if (!node) return; // not mounted
+            const listNode = document.getElementById('requests-list') || node.querySelector('#requests-list');
+            if (!listNode) return;
+            renderList(listNode, __requests_lastData);
+          } catch (e) { console.warn('requests: languageChanged handler failed', e); }
+        });
+      } catch (e) { /* ignore */ }
+    }
 
+    renderList(list, __requests_lastData);
+  }
+
+  function renderList(list, data) {
+    list.innerHTML = '';
     if (!data.items || data.items.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'requests-empty';
       const txtKey = data._fetchError ? 'requests.empty_error' : 'requests.empty_no_requests';
       empty.textContent = (window.getString && typeof window.getString === 'function') ? window.getString(txtKey) : (data._fetchError ? 'Failed to load requests.' : 'No requests.');
       list.appendChild(empty);
-    } else {
-      data.items.forEach((it) => {
-        const el = document.createElement('div');
-        el.className = 'request-item';
+      return;
+    }
 
-        const message = document.createElement('div');
-        message.className = 'request-message';
-        // Try to read requester info returned from the server (via joined profiles)
-        const requester = (it.requester && Array.isArray(it.requester) && it.requester[0]) ? it.requester[0] : null;
-        let email = requester?.email || it.user_email || it.email || it.email_address || '';
-        let name = requester?.full_name || requester?.username || (requester?.first_name && requester?.last_name ? `${requester.first_name} ${requester.last_name}` : '') || (it.user_name || it.username || it.name || '');
+    data.items.forEach((it) => {
+      const el = document.createElement('div');
+      el.className = 'request-item';
 
-        // Initial message (may be updated after a fallback fetch)
-        const renderMessage = () => {
-          const displayEmail = email || '';
-          const displayName = name || '';
-          if (window.getString && typeof window.getString === 'function') {
-            const tpl = window.getString('requests.message');
-            if (tpl && tpl.indexOf('{email}') !== -1) {
-              message.textContent = tpl.replace('{email}', displayEmail).replace('{name}', displayName);
-              return;
-            }
-            // fallback when message template not present
-            message.textContent = (displayEmail || displayName) ? `${displayEmail} ${displayName}` : (window.getString('requests.message_no_info') || 'Request details unavailable.');
+      const message = document.createElement('div');
+      message.className = 'request-message';
+      // Try to read requester info returned from the server (via joined profiles)
+      const requester = (it.requester && Array.isArray(it.requester) && it.requester[0]) ? it.requester[0] : null;
+      let email = requester?.email || it.user_email || it.email || it.email_address || '';
+      let name = requester?.full_name || requester?.username || (requester?.first_name && requester?.last_name ? `${requester.first_name} ${requester.last_name}` : '') || (it.user_name || it.username || it.name || '');
+
+      // Initial message (may be updated after a fallback fetch)
+      const renderMessage = () => {
+        const displayEmail = email || '';
+        const displayName = name || '';
+        if (window.getString && typeof window.getString === 'function') {
+          const tpl = window.getString('requests.message');
+          if (tpl && tpl.indexOf('{email}') !== -1) {
+            message.textContent = tpl.replace('{email}', displayEmail).replace('{name}', displayName);
             return;
           }
-          message.textContent = `From: ${displayEmail} - ${displayName} declared to reports to you.`;
-        };
-        renderMessage();
-
-        // If we don't have email or name but we have a requester_id, try fetching the profile client-side
-        if ((!email || !name) && it.requester_id && window.supabase && typeof window.supabase.from === 'function') {
-          (async () => {
-            try {
-              const { data: profile, error } = await window.supabase
-                .from('profiles')
-                .select('email,full_name,first_name,last_name')
-                .eq('id', it.requester_id)
-                .single();
-              if (!error && profile) {
-                email = email || profile.email || '';
-                name = name || profile.full_name || profile.username || ((profile.first_name && profile.last_name) ? `${profile.first_name} ${profile.last_name}` : '');
-                renderMessage();
-              }
-            } catch (e) {
-              console.warn('requests: profile fetch failed', e);
-            }
-          })();
+          // fallback when message template not present
+          message.textContent = (displayEmail || displayName) ? `${displayEmail} ${displayName}` : (window.getString('requests.message_no_info') || 'Request details unavailable.');
+          return;
         }
+        message.textContent = `From: ${displayEmail} - ${displayName} declared to reports to you.`;
+      };
+      renderMessage();
 
-        const actions = document.createElement('div');
-        actions.className = 'request-actions';
-
-        const confirm = document.createElement('button');
-        confirm.className = 'btn btn-primary btn-confirm';
-        confirm.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.confirm') : 'Confirm';
-        try { confirm.setAttribute('aria-label', ((window.getString && typeof window.getString === 'function') ? window.getString('requests.confirm_aria').replace('{who}', (name || email || '').trim()) : `Confirm request from ${name || email}`)); } catch (e) { /* ignore */ }
-
-        const refuse = document.createElement('button');
-        refuse.className = 'btn btn-primary btn-refuse';
-        refuse.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.refuse') : 'Refuse';
-        try { refuse.setAttribute('aria-label', ((window.getString && typeof window.getString === 'function') ? window.getString('requests.refuse_aria').replace('{who}', (name || email || '').trim()) : `Refuse request from ${name || email}`)); } catch (e) { /* ignore */ }
-
-        async function doRespond(action) {
-          confirm.disabled = true; refuse.disabled = true;
+      // If we don't have email or name but we have a requester_id, try fetching the profile client-side
+      if ((!email || !name) && it.requester_id && window.supabase && typeof window.supabase.from === 'function') {
+        (async () => {
           try {
-            const token2 = await resolveAuthToken();
-            const headers2 = { 'Content-Type': 'application/json' };
-            if (token2) headers2['Authorization'] = 'Bearer ' + token2;
-            const r = await fetch('/api/manager-requests/respond', { method: 'POST', headers: headers2, body: JSON.stringify({ id: it.id, action }) });
-            if (!r.ok) throw new Error('respond_failed');
-            const j = await r.json().catch(() => ({}));
-            if (j && j.ok) {
-              const key = action === 'accept' ? 'requests.confirmed' : 'requests.refused';
-              actions.innerHTML = `<em>${(window.getString && typeof window.getString === 'function') ? window.getString(key) : (action === 'accept' ? 'Confirmed' : 'Refused')}</em>`;
-            } else {
-              throw new Error('response_not_ok');
+            const { data: profile, error } = await window.supabase
+              .from('profiles')
+              .select('email,full_name,first_name,last_name')
+              .eq('id', it.requester_id)
+              .single();
+            if (!error && profile) {
+              email = email || profile.email || '';
+              name = name || profile.full_name || profile.username || ((profile.first_name && profile.last_name) ? `${profile.first_name} ${profile.last_name}` : '');
+              renderMessage();
             }
           } catch (e) {
-            console.warn(action + ' failed', e);
-            confirm.disabled = false; refuse.disabled = false;
+            console.warn('requests: profile fetch failed', e);
           }
+        })();
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'request-actions';
+
+      const confirm = document.createElement('button');
+      confirm.className = 'btn btn-primary btn-confirm';
+      confirm.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.confirm') : 'Confirm';
+      try { confirm.setAttribute('aria-label', ((window.getString && typeof window.getString === 'function') ? window.getString('requests.confirm_aria').replace('{who}', (name || email || '').trim()) : `Confirm request from ${name || email}`)); } catch (e) { /* ignore */ }
+
+      const refuse = document.createElement('button');
+      refuse.className = 'btn btn-primary btn-refuse';
+      refuse.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.refuse') : 'Refuse';
+      try { refuse.setAttribute('aria-label', ((window.getString && typeof window.getString === 'function') ? window.getString('requests.refuse_aria').replace('{who}', (name || email || '').trim()) : `Refuse request from ${name || email}`)); } catch (e) { /* ignore */ }
+
+      async function doRespond(action) {
+        confirm.disabled = true; refuse.disabled = true;
+        try {
+          const token2 = await resolveAuthToken();
+          const headers2 = { 'Content-Type': 'application/json' };
+          if (token2) headers2['Authorization'] = 'Bearer ' + token2;
+          const r = await fetch('/api/manager-requests/respond', { method: 'POST', headers: headers2, body: JSON.stringify({ id: it.id, action }) });
+          if (!r.ok) throw new Error('respond_failed');
+          const j = await r.json().catch(() => ({}));
+          if (j && j.ok) {
+            const key = action === 'accept' ? 'requests.confirmed' : 'requests.refused';
+            actions.innerHTML = `<em>${(window.getString && typeof window.getString === 'function') ? window.getString(key) : (action === 'accept' ? 'Confirmed' : 'Refused')}</em>`;
+          } else {
+            throw new Error('response_not_ok');
+          }
+        } catch (e) {
+          console.warn(action + ' failed', e);
+          confirm.disabled = false; refuse.disabled = false;
         }
+      }
 
-        confirm.addEventListener('click', (ev) => { ev.preventDefault(); doRespond('accept'); });
-        refuse.addEventListener('click', (ev) => { ev.preventDefault(); doRespond('decline'); });
+      confirm.addEventListener('click', (ev) => { ev.preventDefault(); doRespond('accept'); });
+      refuse.addEventListener('click', (ev) => { ev.preventDefault(); doRespond('decline'); });
 
-        actions.appendChild(confirm);
-        actions.appendChild(refuse);
+      actions.appendChild(confirm);
+      actions.appendChild(refuse);
 
-        el.appendChild(message);
-        el.appendChild(actions);
-        list.appendChild(el);
-      });
-    }
+      el.appendChild(message);
+      el.appendChild(actions);
+      list.appendChild(el);
+    });
   }
 
   function closeRequests() {
