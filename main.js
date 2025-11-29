@@ -103,6 +103,44 @@ function setUiForAuthState(isLoggedIn) {
     if (footerContainer) footerContainer.classList.remove('visible');
   }
 }
+function setUiForAuthState(isLoggedIn) {
+  const loginContainer = document.getElementById('login-container');
+  const toolbarContainer = document.getElementById('toolbar-container');
+  const onboardingContainer = document.getElementById('onboarding-container');
+  const homeContainer = document.getElementById('home-container');
+  const footerContainer = document.getElementById('footer-container');
+  
+  if (isLoggedIn) {
+    // User logged in: hide login, show toolbar/footer
+    if (loginContainer) loginContainer.style.display = 'none';
+    if (toolbarContainer) toolbarContainer.classList.add('visible');
+    if (footerContainer) footerContainer.classList.add('visible');
+    
+    // Check if onboarding needed
+    if (window.userNeedsOnboarding) {
+      // Show onboarding instead of home
+      if (onboardingContainer) onboardingContainer.classList.add('visible');
+      if (homeContainer) homeContainer.classList.remove('visible');
+      if (typeof initializeOnboarding === 'function') {
+        initializeOnboarding();
+      }
+    } else {
+      // Show home
+      if (onboardingContainer) onboardingContainer.classList.remove('visible');
+      if (homeContainer) homeContainer.classList.add('visible');
+      if (typeof loadView === 'function') {
+        loadView('home');
+      }
+    }
+  } else {
+    // User not logged in: show login, hide other containers
+    if (loginContainer) loginContainer.style.display = 'flex';
+    if (toolbarContainer) toolbarContainer.classList.remove('visible');
+    if (onboardingContainer) onboardingContainer.classList.remove('visible');
+    if (homeContainer) homeContainer.classList.remove('visible');
+    if (footerContainer) footerContainer.classList.remove('visible');
+  }
+}
 
 window.addEventListener('DOMContentLoaded', async () => {
   // Wait for Supabase to be ready

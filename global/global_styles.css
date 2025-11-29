@@ -164,11 +164,6 @@ input, button, select, textarea {
     display: inline-block;
     vertical-align: middle;
   }
-   /* Scrollbar  */
-  --scrollbar-width: 10px;                         /* Default scrollbar width (px) for webkit */
-  --scrollbar-width-firefox: auto ;                /* Firefox scrollbar-width option */
- --color-scrollbar: var(--color-secondary);      /* Default scrollbar thumb color (use secondary) */
-  --color-scrollbar-hover: rgba(235,131,24,0.5); /* Hover thumb (50% opacity of secondary) */
   
   /* Avatar initials color palette (cycling through 10 colors) */
   --rainbow-color-0:  #e53e38;       /* Red */
@@ -270,9 +265,16 @@ input, button, select, textarea {
 }
 /* Shared app scrollbar class: apply these styles by adding `app-scrollbar` to any scrollable element */
 .app-scrollbar {
-  /* Firefox */
-  scrollbar-width: thin;
+  /* Firefox: uses keyword values (auto | thin | none) — controlled by var for easy tuning */
+  scrollbar-width: var(--scrollbar-width-firefox);
   scrollbar-color: var(--color-scrollbar) transparent;
+
+   /* Scrollbar  */
+  --scrollbar-width: 10px;                         /* Default scrollbar width (px) for webkit */
+  --scrollbar-width-firefox: auto;                  /* Firefox scrollbar-width option (keywords only: auto | thin | none) */
+ --color-scrollbar: var(--color-secondary);      /* Default scrollbar thumb color (use secondary) */
+  --color-scrollbar-hover: rgba(235,131,24,0.5); /* Hover thumb (50% opacity of secondary) */
+  
 }
 
 /* WebKit browsers */

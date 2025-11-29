@@ -110,6 +110,14 @@ async function handleSupabaseLogin(email, password, rememberMe) {
     return null;
   }
 
+  try {
+    console.info('[auth:trace] signInWithPassword result', {
+      hasAuthData: !!authData,
+      hasSession: !!authData?.session,
+      returnedUserEmail: authData?.user?.email || null
+    });
+  } catch (e) { /* ignore logging errors */ }
+
   // Handle remember me
   if (rememberMe) {
     localStorage.setItem('rememberedEmail', email);
@@ -135,6 +143,7 @@ async function handleSupabaseLogin(email, password, rememberMe) {
  * Show post-auth success and navigate
  */
 function handleAuthSuccess(user, profileData = null) {
+  try { console.info('[auth:trace] handleAuthSuccess start', { userId: user?.id || null, userEmail: user?.email || null, userHasAccessToken: !!user?.access_token }); } catch(e){}
   window.currentUser = user;
 
   const needsOnboarding = !profileData?.first_name || !profileData?.last_name || !profileData?.reports_to_email;
@@ -244,9 +253,16 @@ function handleAuthSuccess(user, profileData = null) {
       // Requests container if so. This ensures managers land on their
       // pending requests immediately after login.
       try {
-        try {
+          // Capture a snapshot of the supabase session right before checking pending requests
           let token = null;
-          try { const { data: { session } } = await window.supabase.auth.getSession(); token = session?.access_token || null; } catch (e) { /* ignore */ }
+          let sessionSnapshot = null;
+          try {
+            const { data: { session } } = await window.supabase.auth.getSession();
+            sessionSnapshot = session || null;
+            token = sessionSnapshot?.access_token || null;
+          } catch (e) { /* ignore */ }
+          try { console.info('[auth:trace] pending-requests sessionSnapshot', { hasSession: !!sessionSnapshot, sessionUserEmail: sessionSnapshot?.user?.email || null, tokenAvailable: !!token }); } catch (e) {}
+
           const headers = { 'Accept': 'application/json' };
           if (token) headers['Authorization'] = 'Bearer ' + token;
 
@@ -266,7 +282,6 @@ function handleAuthSuccess(user, profileData = null) {
             } catch (e) { /* ignore parse errors */ }
           }
         } catch (e) { console.warn('Login: failed to check pending requests', e); }
-      } catch (e) { /* ignore */ }
 
       // Mark that user data is loaded in memory and notify listeners
       try { window.userDataReady = true; } catch (e) { /* ignore */ }

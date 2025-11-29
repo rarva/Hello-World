@@ -1,128 +1,211 @@
-(function(){
+(function () {
   const tplPath = 'containers/requests/requests.html';
 
-  async function loadTemplate(){
+  async function loadTemplate() {
     const r = await fetch(tplPath);
     if (!r.ok) throw new Error('Failed to load requests template');
     return await r.text();
   }
 
-  (function ensureStyles(){
-    if (!document.querySelector('link[data-requests-styles]')){
+  (function ensureStyles() {
+    if (!document.querySelector('link[data-requests-styles]')) {
       const l = document.createElement('link');
       l.rel = 'stylesheet';
       l.href = '/containers/requests/requests_styles.css';
-      l.setAttribute('data-requests-styles','1');
+      l.setAttribute('data-requests-styles', '1');
       document.head.appendChild(l);
     }
   })();
 
-  async function openRequests(){
-    // If already mounted, do nothing
-    if (document.getElementById('requests-container')) return;
+  async function resolveAuthToken() {
+    let token = null;
     try {
-      console.info('openRequests: started');
-
-      // Resolve access token (prefer window.currentUser, fallback to supabase session)
-      let token = null;
-      try { token = (window.currentUser && (window.currentUser.access_token || window.currentUser.user?.access_token)) || null; } catch (e) { token = null; }
-      console.debug('openRequests: tokenFromWindowCurrentUser', !!token);
-      if (!token && window.supabase && typeof window.supabase.auth?.getSession === 'function') {
-        try { const { data: { session } } = await window.supabase.auth.getSession(); token = session?.access_token || null; } catch (e) { /* ignore */ }
-        console.debug('openRequests: tokenFromSupabaseGetSession', !!token);
-      }
-
-      const headers = { 'Accept': 'application/json' };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-
-      // Fetch list first; only mount UI when there are items
-      let res;
+      if (window.currentUser) token = window.currentUser.access_token || window.currentUser.user?.access_token || null;
+    } catch (e) { /* ignore */ }
+    if (!token && window.supabase && typeof window.supabase.auth?.getSession === 'function') {
       try {
-        console.debug('openRequests: fetching /api/manager-requests/list', { hasAuth: !!headers.Authorization });
-        res = await fetch('/api/manager-requests/list', { method: 'GET', headers });
-      } catch (e) {
-        console.warn('openRequests: list fetch failed', e);
-        return;
+        const { data: { session } } = await window.supabase.auth.getSession();
+        token = session?.access_token || null;
+      } catch (e) { /* ignore */ }
+    }
+    try { console.debug('[requests:trace] resolveAuthToken ->', { tokenAvailable: !!token }); } catch (e) {}
+    return token;
+  }
+
+  async function openRequests() {
+    console.info('openRequests: started');
+
+    const existing = document.getElementById('requests-container');
+    if (existing) {
+      try {
+        existing.classList.add('visible');
+        if (existing.style && existing.style.display === 'none') existing.style.removeProperty('display');
+        try { console.info('[requests:flag] re-show existing mount', getComputedStyle(existing).display); } catch (e) {}
+      } catch (e) { console.warn('[requests:flag] failed to re-show existing mount', e); }
+    }
+
+    const token = await resolveAuthToken();
+    console.debug('openRequests: tokenResolved', !!token);
+
+    const headers = { 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    let data = { items: [] };
+    try {
+      console.debug('openRequests: fetching /api/manager-requests/list', { hasAuth: !!headers.Authorization });
+      let res = await fetch('/api/manager-requests/list', { method: 'GET', headers });
+
+      // If server responded 401 and we didn't have a token, try to re-resolve the token
+      if (res.status === 401 && !token) {
+        console.info('openRequests: received 401 and no token present — retrying token resolution');
+        const newToken = await resolveAuthToken();
+        if (newToken) {
+          console.info('openRequests: resolved token on retry');
+          headers['Authorization'] = 'Bearer ' + newToken;
+          res = await fetch('/api/manager-requests/list', { method: 'GET', headers });
+        } else {
+          console.info('openRequests: token still not available after retry');
+        }
       }
 
       if (!res.ok) {
         console.warn('openRequests: list fetch returned non-ok', res.status);
-        try { const txt = await res.text().catch(() => ''); console.debug('openRequests: body', txt.slice ? txt.slice(0,300) : txt); } catch (e) {}
-        return;
+        const txt = await res.text().catch(() => '');
+        console.debug('openRequests: body', txt && txt.slice ? txt.slice(0, 300) : txt);
+        data._fetchError = true;
+      } else {
+        const parsed = await res.json().catch(() => null);
+        if (parsed && Array.isArray(parsed.items)) data.items = parsed.items;
+        else data._noData = true;
       }
+    } catch (e) {
+      console.warn('openRequests: list fetch failed', e);
+      data._fetchError = true;
+    }
 
-      const data = await res.json().catch(() => null);
-      console.debug('openRequests: list data items', Array.isArray(data?.items) ? data.items.length : 'no-data');
-      if (!data || !Array.isArray(data.items) || data.items.length === 0) return;
+    console.debug('openRequests: list data items', Array.isArray(data.items) ? data.items.length : 'no-data', data);
 
-      // Mount template and render items
+    // Mount UI
+    let mount = document.getElementById('requests-container');
+    if (!mount) {
       const html = await loadTemplate();
       const frag = document.createRange().createContextualFragment(html);
-      const mount = frag.querySelector('#requests-container') || frag.firstElementChild;
+      mount = frag.querySelector('#requests-container') || frag.firstElementChild;
       const main = document.getElementById('main-container') || document.body;
       const footer = document.getElementById('footer-container');
-      if (footer && footer.parentNode === main) main.insertBefore(mount, footer);
-      else main.appendChild(mount);
+      try {
+        if (footer && footer.parentNode === main) main.insertBefore(mount, footer);
+        else main.appendChild(mount);
+      } catch (e) {
+        document.body.appendChild(mount);
+      }
+    }
 
-      const close = document.getElementById('requests-close') || mount.querySelector('#requests-close');
-      if (close && !close.dataset._bound) { close.addEventListener('click', (e)=>{ e.preventDefault(); closeRequests(); }); close.dataset._bound = '1'; }
+    // Close button
+    const close = document.getElementById('requests-close') || mount.querySelector('#requests-close');
+    if (close && !close.dataset._bound) {
+      close.addEventListener('click', (e) => { e.preventDefault(); closeRequests(); });
+      close.dataset._bound = '1';
+    }
 
-      const list = document.getElementById('requests-list') || mount.querySelector('#requests-list');
-      if (!list) return;
-      list.innerHTML = '';
-      data.items.forEach(it => {
-        const el = document.createElement('div'); el.className = 'request-item';
-        const created = new Date(it.created_at).toLocaleString();
-        const expires = it.expires_at ? new Date(it.expires_at).toLocaleString() : '';
-        el.innerHTML = `<div><strong>Request</strong> — created: ${created} — expires: ${expires}</div>`;
-        const actions = document.createElement('div'); actions.className = 'request-actions';
-        const accept = document.createElement('button'); accept.textContent = 'Accept';
-        const decline = document.createElement('button'); decline.textContent = 'Decline';
+    const list = document.getElementById('requests-list') || mount.querySelector('#requests-list');
+    if (!list) return;
+    list.innerHTML = '';
 
-        accept.addEventListener('click', async (ev)=>{
-          ev.preventDefault(); accept.disabled = true; decline.disabled = true;
-          try {
-            let token2 = null;
-            try { token2 = (window.currentUser && (window.currentUser.access_token || window.currentUser.user?.access_token)) || null; } catch (e) { token2 = null; }
-            if (!token2 && window.supabase && typeof window.supabase.auth?.getSession === 'function') {
-              try { const { data: { session } } = await window.supabase.auth.getSession(); token2 = session?.access_token || null; } catch (e) { /* ignore */ }
+    if (!data.items || data.items.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'requests-empty';
+      empty.textContent = data._fetchError ? 'Failed to load requests.' : 'No requests.';
+      list.appendChild(empty);
+    } else {
+      data.items.forEach((it) => {
+        const el = document.createElement('div');
+        el.className = 'request-item';
+
+        const message = document.createElement('div');
+        message.className = 'request-message';
+        // Try to read requester info returned from the server (via joined profiles)
+        const requester = (it.requester && Array.isArray(it.requester) && it.requester[0]) ? it.requester[0] : null;
+        let email = requester?.email || it.user_email || it.email || it.email_address || '';
+        let name = requester?.full_name || requester?.username || (requester?.first_name && requester?.last_name ? `${requester.first_name} ${requester.last_name}` : '') || (it.user_name || it.username || it.name || '');
+
+        // Initial message (may be updated after a fallback fetch)
+        const renderMessage = () => {
+          const displayEmail = email || '';
+          const displayName = name || '';
+          message.textContent = `From: ${displayEmail} - ${displayName} declared to reports to you.`;
+        };
+        renderMessage();
+
+        // If we don't have email or name but we have a requester_id, try fetching the profile client-side
+        if ((!email || !name) && it.requester_id && window.supabase && typeof window.supabase.from === 'function') {
+          (async () => {
+            try {
+              const { data: profile, error } = await window.supabase
+                .from('profiles')
+                .select('email,full_name,first_name,last_name')
+                .eq('id', it.requester_id)
+                .single();
+              if (!error && profile) {
+                email = email || profile.email || '';
+                name = name || profile.full_name || profile.username || ((profile.first_name && profile.last_name) ? `${profile.first_name} ${profile.last_name}` : '');
+                renderMessage();
+              }
+            } catch (e) {
+              console.warn('requests: profile fetch failed', e);
             }
+          })();
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'request-actions';
+
+        const confirm = document.createElement('button');
+        confirm.className = 'btn btn-primary btn-confirm';
+        confirm.textContent = 'Confirm';
+        confirm.setAttribute('aria-label', `Confirm request from ${name || email}`);
+
+        const refuse = document.createElement('button');
+        refuse.className = 'btn btn-primary btn-refuse';
+        refuse.textContent = 'Refuse';
+        refuse.setAttribute('aria-label', `Refuse request from ${name || email}`);
+
+        async function doRespond(action) {
+          confirm.disabled = true; refuse.disabled = true;
+          try {
+            const token2 = await resolveAuthToken();
             const headers2 = { 'Content-Type': 'application/json' };
             if (token2) headers2['Authorization'] = 'Bearer ' + token2;
-            const r = await fetch('/api/manager-requests/respond', { method: 'POST', headers: headers2, body: JSON.stringify({ id: it.id, action: 'accept' }) });
+            const r = await fetch('/api/manager-requests/respond', { method: 'POST', headers: headers2, body: JSON.stringify({ id: it.id, action }) });
             if (!r.ok) throw new Error('respond_failed');
-            const j = await r.json(); if (j.ok) el.querySelector('.request-actions').innerHTML = '<em>Accepted</em>';
-          } catch (e) { console.warn('accept failed', e); accept.disabled = false; decline.disabled = false; }
-        });
-
-        decline.addEventListener('click', async (ev)=>{
-          ev.preventDefault(); accept.disabled = true; decline.disabled = true;
-          try {
-            let token2 = null;
-            try { token2 = (window.currentUser && (window.currentUser.access_token || window.currentUser.user?.access_token)) || null; } catch (e) { token2 = null; }
-            if (!token2 && window.supabase && typeof window.supabase.auth?.getSession === 'function') {
-              try { const { data: { session } } = await window.supabase.auth.getSession(); token2 = session?.access_token || null; } catch (e) { /* ignore */ }
+            const j = await r.json().catch(() => ({}));
+            if (j && j.ok) {
+              actions.innerHTML = `<em>${action === 'accept' ? 'Confirmed' : 'Refused'}</em>`;
+            } else {
+              throw new Error('response_not_ok');
             }
-            const headers2 = { 'Content-Type': 'application/json' };
-            if (token2) headers2['Authorization'] = 'Bearer ' + token2;
-            const r = await fetch('/api/manager-requests/respond', { method: 'POST', headers: headers2, body: JSON.stringify({ id: it.id, action: 'decline' }) });
-            if (!r.ok) throw new Error('respond_failed');
-            const j = await r.json(); if (j.ok) el.querySelector('.request-actions').innerHTML = '<em>Declined</em>';
-          } catch (e) { console.warn('decline failed', e); accept.disabled = false; decline.disabled = false; }
-        });
+          } catch (e) {
+            console.warn(action + ' failed', e);
+            confirm.disabled = false; refuse.disabled = false;
+          }
+        }
 
-        actions.appendChild(accept); actions.appendChild(decline);
+        confirm.addEventListener('click', (ev) => { ev.preventDefault(); doRespond('accept'); });
+        refuse.addEventListener('click', (ev) => { ev.preventDefault(); doRespond('decline'); });
+
+        actions.appendChild(confirm);
+        actions.appendChild(refuse);
+
+        el.appendChild(message);
         el.appendChild(actions);
         list.appendChild(el);
       });
-
-    } catch (e) {
-      console.error('openRequests failed', e);
     }
   }
 
-  function closeRequests(){
-    const node = document.getElementById('requests-container'); if (node) node.remove();
+  function closeRequests() {
+    const node = document.getElementById('requests-container');
+    if (node) node.remove();
   }
 
   window.openRequests = openRequests;

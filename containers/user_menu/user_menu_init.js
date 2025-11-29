@@ -159,11 +159,34 @@ try {
       handler: async () => {
         try { closeProfileModal(); } catch (e) { /* ignore */ }
         try {
-          if (typeof window.openRequests === 'function') {
-            await window.openRequests();
-          } else {
+          if (typeof window.openRequests !== 'function') {
             console.warn('openRequests not available');
+            return;
           }
+
+          // Short-poll for an auth token to avoid 401 when calling protected API.
+          const waitForAuthToken = async (timeout = 2000, interval = 100) => {
+            const start = Date.now();
+            try { if (window.currentUser && (window.currentUser.access_token || window.currentUser.user?.access_token)) return window.currentUser.access_token || window.currentUser.user?.access_token; } catch (e) {}
+            while ((Date.now() - start) < timeout) {
+              try {
+                if (window.supabase && typeof window.supabase.auth?.getSession === 'function') {
+                  const { data: { session } } = await window.supabase.auth.getSession();
+                  if (session && session.access_token) return session.access_token;
+                }
+              } catch (e) { /* ignore transient */ }
+              await new Promise(r => setTimeout(r, interval));
+            }
+            return null;
+          };
+
+          const token = await waitForAuthToken(2000, 100);
+          if (!token) {
+            console.info('user_menu: no auth token available — skipping openRequests to avoid 401');
+            return;
+          }
+
+          await window.openRequests();
         } catch (err) {
           console.error('Failed to open Requests from profile menu', err);
         }

@@ -1,7 +1,140 @@
-.requests-container {background-color: #50C878;display: flex max-width: 800px; margin: 16px auto; padding: 12px; border: 1px solid #eee; background: #fff }
-.requests-header h2 { margin: 0 0 8px 0; font-size: 18px }
-.requests-body { max-height: 360px; overflow:auto; padding:8px }
-.request-item { border-bottom:1px solid #f0f0f0; padding:8px 0 }
-.request-actions { margin-top:8px }
-.request-actions button { margin-right:8px }
-.requests-footer { text-align:right; margin-top:12px }
+.requests-container {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	height: 100%;
+	min-height: 0;
+	box-sizing: border-box;
+	width: 100%;
+	align-self: stretch;
+	margin: 0; /* full-bleed: remove margins */
+
+	border: none; /* full-bleed: remove border */
+	background: var(--color-bg);
+	color: var(--font-color-light);
+	gap: 8px;
+	overflow: auto; /* container will show scrollbars */
+}
+
+.requests-header {
+    background-color: transparent;
+  font-size: var(--font-size-header, 15px);
+
+color: var(--color-primary) ;
+    }
+
+/* Override browser H2 defaults inside our headers to use app tokens */
+.requests-header :is(h1,h2),
+.user-profile-header :is(h1,h2) {
+	margin: 0;
+	padding: 0;
+	font-size: var(--font-size-title);
+	font-weight: var(--font-bold-heavy);
+	color: var(--color-primary);
+	line-height: 1.2;
+}
+
+.requests-body {
+	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	min-height: 0;
+	/* let the outer container provide scrolling; keep body transparent */
+	overflow: visible;
+	background: transparent; /* let emerald show through */
+	color: var(--font-color-dark);
+	/* Fill the available width */
+	width: 100%;
+	box-sizing: border-box;
+	margin: 0;
+	padding: 24px 8px;
+}
+
+.request-item {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end; /* pack items to the right */
+	gap: 12px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	padding: 8px 0;
+
+	font-size: var(--font-size-regular);
+	color: var(--font-color-dark);
+	background: transparent;
+}
+
+.request-message {
+	/* Make message sit to the left of the Confirm button and right-align its text */
+	flex: 0 1 60%;
+	max-width: 60%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-align: right;
+	background-color: transparent;
+}
+.request-actions { display: flex; gap: 8px; align-items: center; }
+.request-actions .btn { 
+    height: 30px;
+    width: 100px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-bold-heavy);
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 16px;
+}
+
+.request-actions .btn:hover {
+  opacity: 0.9;
+}
+
+.request-actions .btn:active {
+  opacity: 0.85;
+}
+
+/* Confirm / Refuse colors */
+.request-actions .btn-confirm {
+	background: var(--color-success);
+	color: white;
+	border: none;
+}
+.request-actions .btn-confirm:hover { background: color-mix(in srgb, var(--color-success) 85%, black 15%); }
+
+.request-actions .btn-refuse {
+	background: var(--color-error);
+	color: white;
+	border: none;
+}
+.request-actions .btn-refuse:hover { background: color-mix(in srgb, var(--color-error) 85%, black 15%); }
+
+.requests-footer {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	width: 100%;
+	align-self: stretch;
+	background-color: transparent;
+	margin: 0;
+	padding: 12px 0;
+}
+
+/* Close button width override */
+.requests-footer .btn-close {
+	width: 210px;
+	min-width: 210px;
+	max-width: 210px;
+	flex: 0 0 210px;
+	align-self: center;
+}
+
+/* Match profile column visuals for centered content */
+@media (max-width:600px) {
+	.requests-body { max-width: none; padding: 16px; }
+}

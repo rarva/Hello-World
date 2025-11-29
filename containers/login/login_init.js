@@ -220,10 +220,25 @@ async function initLogin() {
     translateLoginForm();
   }
 
-  // Wire form submit event
+  // Wire form submit event. Use a resilient wrapper in case `handleLogin`
+  // is not yet defined when this runs (scripts may load in different order).
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
+    loginForm.addEventListener('submit', function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      try {
+        if (typeof window.handleLogin === 'function') return window.handleLogin(e);
+        if (typeof handleLogin === 'function') return handleLogin(e);
+        // If not available yet, retry shortly (best-effort)
+        setTimeout(() => {
+          try {
+            if (typeof window.handleLogin === 'function') window.handleLogin(e);
+            else if (typeof handleLogin === 'function') handleLogin(e);
+            else console.warn('handleLogin still not available after retry');
+          } catch (err) { console.error('Deferred handleLogin call failed', err); }
+        }, 120);
+      } catch (err) { console.error('Login submit handler failed', err); }
+    });
   }
 
   // Wire signup mode toggle
