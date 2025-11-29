@@ -1,3 +1,168 @@
+# Hello-World — Rhomberg OrgChart Admin
+
+Stable snapshot: `v1.0.8-stable-2025-11-29`
+
+A small single-page demo admin app with multi-language authentication, onboarding, avatar management, and manager/requests workflows backed by Supabase (PostgreSQL + Auth + Storage). This repository contains the browser UI, serverless/email handlers, DB migrations, and development tooling used to build and maintain the project.
+
+**What this README covers, topic-by-topic:**
+- **Project summary** — goals and user flows
+- **Features** — implemented functionality and UX notes
+- **Architecture & repo layout** — folders and responsibilities
+- **Development setup** — local environment, required secrets, quick start
+- **Database & Supabase** — migrations and important notes
+- **Deployment** — Vercel/GitHub Actions guidance
+- **Troubleshooting & diagnostics** — common issues and how to inspect logs
+- **Releases & branching** — tagging and snapshot rules
+- **Contributing & next steps** — how to help or extend the project
+
+**Project summary**
+- **Purpose:** A lightweight admin UI demonstrating sign-up/login, post-signup onboarding, avatar upload + initials fallback, manager/request workflows, and a small email-sending edge handler. It is intended as a demo for internal tooling and a starting point for production hardening.
+- **Primary user flows:** signup → onboarding (first/last name, manager email) → home → manager can review Requests and accept/refuse; profile editing and avatar management.
+
+**Key features**
+- **Authentication & onboarding:** Email/password auth with Supabase, onboarding modal for profile completion, session persistence.
+- **Avatar system:** Drag-and-drop or choose-file, canvas-based resizing/compression, initials fallback with deterministic color palette.
+- **Requests & manager flows:** Requests UI that fetches server-side items, shows requester name/email where available, and supports confirm/refuse actions.
+- **Email sending:** Edge handler area (`EMAILS/`) that validates tokens and sends manager notifications (SendGrid integration expected via env var).
+- **i18n:** JSON-based translations (`language_strings.json`) with automatic browser language detection and user preference persistence.
+- **Uniformity tooling:** Scripts under `uniformity_checks/` to detect hardcoded colors, fonts, strings, scrollbars, and tooltips.
+
+**Architecture & repository layout (high level)**
+- `index.html` — single-page shell that mounts container fragments.
+- `main.js` — orchestrates session behavior and container mounts.
+- `config.js` — runtime Supabase keys for local testing (git-ignored in production).
+- `language_strings.json` + `global/language_manager.js` — i18n system.
+- `containers/` — feature containers (each contains `.html`, `_init.js`, `_errors.js`, `_styles.css`):
+  - `login/`, `onboarding/`, `home/`, `toolbar/`, `footer/`, `user_menu/`, `user_profile/`, `avatar/`, `requests/`.
+- `global/` — shared helpers & styles (`global_functions.js`, `global_styles.css`).
+- `EMAILS/` — server/email handlers:
+  - `EMAILS/server/` — edge handlers (server-side email & API helpers).
+  - `EMAILS/templates/` — email HTML templates used by server.
+- `migrations/` — SQL migration files to set up tables and indexes.
+- `uniformity_checks/` — developer tooling for style consistency.
+
+**Development setup — quick start**
+Prerequisites:
+- Node.js (for tooling): 16+ recommended.
+- PowerShell or a UNIX shell for commands on Windows.
+- A Supabase project (for auth, DB, and Storage) when you want integrated functionality.
+
+Local quick start (UI only):
+1. Clone the repo:
+
+```powershell
+git clone https://github.com/rarva/Hello-World.git
+cd Hello-World
+git checkout stable/2025-11-29
+```
+
+2. Create a local `config.js` (DO NOT COMMIT) with your dev keys:
+
+```javascript
+window.SUPABASE_URL = 'https://your-project.supabase.co';
+window.SUPABASE_ANON_KEY = 'your-anon-key';
+```
+
+3. Serve the static site locally:
+
+```powershell
+# from repo root
+python -m http.server 8000
+# open http://localhost:8000
+```
+
+4. Optional: run uniformity checks (useful when changing styles or strings):
+
+```powershell
+node .\uniformity_checks\run_all_checks.js --sync
+# or for background runs in PowerShell
+Start-Job -ScriptBlock { node .\uniformity_checks\run_all_checks.js }
+```
+
+**Supabase & database setup**
+- Create a Supabase project and save the `Project URL` and `Anon Key`.
+- In Supabase SQL Editor, run the migration files in `migrations/` in order (001, 002, 003, ...). These create `profiles` and other tables the app expects.
+- If you plan to allow server-side PostgREST embedding of `profiles` into `manager_requests`, ensure the relevant foreign key exists (there is a migration `005_add_fk_manager_requests_profiles.sql` prepared — run it as the DB owner).
+- Create a `avatars` Storage bucket (public read) if you want avatars to upload and be served publicly.
+
+Important environment variables (do NOT commit keys):
+- `SUPABASE_URL` — your Supabase project URL
+- `SUPABASE_ANON_KEY` — public anon key for client usage
+- `SUPABASE_SERVICE_KEY` or `SUPABASE_KEY` — service role key used by server handlers (store securely in hosting env)
+- `SENDGRID_API_KEY` — (optional) for email sends via the `EMAILS` handler
+- `EMAIL_FROM` — verified sender address for outgoing notifications
+
+**Running migrations & data import**
+- The `migrations/` folder contains ordered SQL files. Apply them in order in Supabase SQL Editor.
+- To import local legacy users, the repo includes `migrate_users.js` which requires `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` in your environment and must be run locally.
+
+**Deployment**
+- This project is commonly deployed as a static app (hosted) combined with serverless edge handlers for email. Two supported patterns:
+  - **Vercel**: host front-end + serverless edge functions from `EMAILS/server/` — set environment variables in Vercel dashboard.
+  - **GitHub Pages + Actions**: build-time injection of runtime `config.js` using repo secrets in GitHub Actions — keep service keys out of the repository.
+
+Typical deployment steps (Vercel CLI example):
+
+```powershell
+# set envs interactively
+vercel env add SUPABASE_URL production
+vercel env add SUPABASE_ANON_KEY production
+vercel env add SUPABASE_KEY production  # service key, if you need server-side PostgREST access
+vercel env add SENDGRID_API_KEY production
+# deploy
+vercel --prod --yes
+```
+
+**Email handler notes**
+- `EMAILS/server/list-manager-requests.js` and related handlers perform server-side queries and may prefer the `SUPABASE_KEY` (service role) for operations that require bypassing row-level security. Keep that key secure.
+- If PostgREST embedding does not surface requester names/emails, the handler falls back to a profiles bulk fetch and merges results.
+
+**Troubleshooting & diagnostics (common issues)**
+- Requests UI shows no requester name/email: ensure either the DB FK exists (run migration 005) or that the server env has `SUPABASE_KEY` so the handler can embed/merge profiles.
+- 401/403 on server calls: verify your hosting environment has the correct `SUPABASE_KEY`/`SUPABASE_ANON_KEY` and that tokens are passed as `Authorization: Bearer <token>` where required.
+- SendGrid 401/403: confirm `SENDGRID_API_KEY` is present in the hosting environment and `EMAIL_FROM` is a verified sender.
+- Deployment log debugging (Vercel):
+
+```powershell
+# tail recent logs (example)
+vercel logs <project-name-or-url> --since 10m --prod
+```
+
+**Testing**
+- Manual smoke test:
+  - Signup a new user → complete onboarding → check `profiles` table for saved fields.
+  - Use a manager account to open Requests → verify Confirm/Refuse actions issue expected server calls.
+- Unit / CI: There are no automated unit tests in the repo; add lightweight node-based tests if you plan to expand coverage.
+
+**Releases & branching**
+- This snapshot is on branch `stable/2025-11-29` and tagged `v1.0.8-stable-2025-11-29` in the repository.
+- Recommended practice:
+  - Feature branches off `main` for new work.
+  - Create annotated release tags for production snapshots.
+
+**Contributing**
+- Keep secrets out of commits. Use `config.js` locally and host secrets in environment variables.
+- For UI changes: run `uniformity_checks` before opening PRs to avoid hardcoded tokens/styles.
+- If you change DB shape, add a new migration file under `migrations/` and document required index/constraints in the migration.
+
+**Appendix: Important files & where to look**
+- `main.js` — app bootstrapping and container mounting
+- `global/global_functions.js` — common helpers used across containers
+- `containers/*/_init.js` — each container's initialization logic
+- `containers/requests/` — requests UI, styles, and client fallback logic
+- `EMAILS/server/` — server-side email and API handlers
+- `migrations/` — ordered SQL files that the DB expects
+
+If you'd like, I can also:
+- Open a PR from `stable/2025-11-29` to `main` with these README changes and `RELEASE_NOTES.md` attached.
+- Create a GitHub Release using the tag and `RELEASE_NOTES.md` as the body.
+- Re-run `vercel --prod` and collect logs/screenshots for smoke tests.
+
+---
+
+**Maintainer:** `rarva` — feel free to open issues or ask for follow-ups (DB migration application, release PR, or deploy verification).
+
+**Last updated:** 2025-11-29
 ````markdown
 # Hello-World
 Rhomberg OrgChart Admin — multi-language authentication + onboarding demo (Supabase backend)
