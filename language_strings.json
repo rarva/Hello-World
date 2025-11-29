@@ -560,6 +560,9 @@
   "requests.confirmed": { "en": "Confirmed", "pt": "Confirmado", "de": "Bestätigt", "fr": "Confirmé", "it": "Confermato" },
   "requests.refused": { "en": "Refused", "pt": "Recusado", "de": "Abgelehnt", "fr": "Refusé", "it": "Rifiutato" },
   "requests.load_failed_template": { "en": "Failed to load requests template.", "pt": "Falha ao carregar o template de solicitações.", "de": "Fehler beim Laden der Anfragevorlage.", "fr": "Échec du chargement du modèle des demandes.", "it": "Impossibile caricare il modello delle richieste." },
+  "requests.title": { "en": "Pending Requests", "pt": "Solicitações Pendentes", "de": "Ausstehende Anfragen", "fr": "Demandes en attente", "it": "Richieste in sospeso" },
+  "requests.loading": { "en": "Loading requests...", "pt": "Carregando solicitações...", "de": "Anfragen werden geladen...", "fr": "Chargement des demandes...", "it": "Caricamento delle richieste..." },
+  "requests.close": { "en": "Close", "pt": "Fechar", "de": "Schließen", "fr": "Fermer", "it": "Chiudi" },
   "profile.lastName": {
     "en": "Last Name",
     "pt": "Sobrenome",

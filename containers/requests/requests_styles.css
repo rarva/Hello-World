@@ -78,17 +78,22 @@ color: var(--color-primary) ;
 }
 .request-actions { display: flex; gap: 8px; align-items: center; }
 .request-actions .btn { 
-    height: 30px;
-    width: 100px;
-  border: none;
-  border-radius: var(--radius);
-  font-size: var(--font-size-regular);
-  font-weight: var(--font-bold-heavy);
-  cursor: pointer;
-  transition: all 200ms ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 0 16px;
+		height: 30px;
+		/* size to content */
+		width: auto;
+		min-width: 56px;
+	border: none;
+	border-radius: var(--radius);
+	font-size: var(--font-size-regular);
+	font-weight: var(--font-bold-heavy);
+	cursor: pointer;
+	transition: all 200ms ease;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	padding: 0 12px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .request-actions .btn:hover {
@@ -127,10 +132,10 @@ color: var(--color-primary) ;
 
 /* Close button width override */
 .requests-footer .btn-close {
-	width: 210px;
-	min-width: 210px;
-	max-width: 210px;
-	flex: 0 0 210px;
+	/* width is computed dynamically by JS to match Confirm+Refuse widths + gap */
+	width: auto;
+	min-width: 0;
+	flex: 0 0 auto;
 	align-self: center;
 }
 

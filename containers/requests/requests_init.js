@@ -106,6 +106,17 @@
 
     // Close button
     const close = document.getElementById('requests-close') || mount.querySelector('#requests-close');
+    // set localized static text (title, loading, close)
+    function updateStaticText() {
+      try {
+        const titleEl = mount.querySelector('[data-i18n="requests.title"]');
+        if (titleEl) titleEl.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.title') : 'Pending Requests';
+        // do not set a loading placeholder here; list will be rendered when data is available
+        const closeEl = mount.querySelector('[data-i18n="requests.close"]');
+        if (closeEl) closeEl.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.close') : 'Close';
+      } catch (e) { console.warn('requests: updateStaticText failed', e); }
+    }
+    updateStaticText();
     if (close && !close.dataset._bound) {
       close.addEventListener('click', (e) => { e.preventDefault(); closeRequests(); });
       close.dataset._bound = '1';
@@ -125,6 +136,8 @@
             if (!node) return; // not mounted
             const listNode = document.getElementById('requests-list') || node.querySelector('#requests-list');
             if (!listNode) return;
+            // update static text and re-render list
+            updateStaticText();
             renderList(listNode, __requests_lastData);
           } catch (e) { console.warn('requests: languageChanged handler failed', e); }
         });
@@ -167,10 +180,15 @@
             return;
           }
           // fallback when message template not present
-          message.textContent = (displayEmail || displayName) ? `${displayEmail} ${displayName}` : (window.getString('requests.message_no_info') || 'Request details unavailable.');
+          message.textContent = (displayEmail || displayName) ? `${displayEmail} ${displayName}` : (window.getString ? window.getString('requests.message_no_info') : 'requests.message_no_info');
           return;
         }
-        message.textContent = `From: ${displayEmail} - ${displayName} declared to reports to you.`;
+        if (window.getString && typeof window.getString === 'function') {
+          const tpl = window.getString('requests.message');
+          message.textContent = tpl ? tpl.replace('{email}', displayEmail).replace('{name}', displayName) : 'requests.message';
+        } else {
+          message.textContent = 'requests.message';
+        }
       };
       renderMessage();
 
@@ -200,12 +218,24 @@
       const confirm = document.createElement('button');
       confirm.className = 'btn btn-primary btn-confirm';
       confirm.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.confirm') : 'Confirm';
-      try { confirm.setAttribute('aria-label', ((window.getString && typeof window.getString === 'function') ? window.getString('requests.confirm_aria').replace('{who}', (name || email || '').trim()) : `Confirm request from ${name || email}`)); } catch (e) { /* ignore */ }
+        try {
+          if (window.getString && typeof window.getString === 'function') {
+            confirm.setAttribute('aria-label', window.getString('requests.confirm_aria').replace('{who}', (name || email || '').trim()));
+          } else {
+            confirm.setAttribute('aria-label', 'requests.confirm_aria');
+          }
+        } catch (e) { /* ignore */ }
 
       const refuse = document.createElement('button');
       refuse.className = 'btn btn-primary btn-refuse';
       refuse.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.refuse') : 'Refuse';
-      try { refuse.setAttribute('aria-label', ((window.getString && typeof window.getString === 'function') ? window.getString('requests.refuse_aria').replace('{who}', (name || email || '').trim()) : `Refuse request from ${name || email}`)); } catch (e) { /* ignore */ }
+        try {
+          if (window.getString && typeof window.getString === 'function') {
+            refuse.setAttribute('aria-label', window.getString('requests.refuse_aria').replace('{who}', (name || email || '').trim()));
+          } else {
+            refuse.setAttribute('aria-label', 'requests.refuse_aria');
+          }
+        } catch (e) { /* ignore */ }
 
       async function doRespond(action) {
         confirm.disabled = true; refuse.disabled = true;
@@ -216,9 +246,9 @@
           const r = await fetch('/api/manager-requests/respond', { method: 'POST', headers: headers2, body: JSON.stringify({ id: it.id, action }) });
           if (!r.ok) throw new Error('respond_failed');
           const j = await r.json().catch(() => ({}));
-          if (j && j.ok) {
+            if (j && j.ok) {
             const key = action === 'accept' ? 'requests.confirmed' : 'requests.refused';
-            actions.innerHTML = `<em>${(window.getString && typeof window.getString === 'function') ? window.getString(key) : (action === 'accept' ? 'Confirmed' : 'Refused')}</em>`;
+            actions.innerHTML = `<em>${(window.getString && typeof window.getString === 'function') ? window.getString(key) : key}</em>`;
           } else {
             throw new Error('response_not_ok');
           }
@@ -238,6 +268,33 @@
       el.appendChild(actions);
       list.appendChild(el);
     });
+    // After list rendered, adjust Close button width to match confirm+refuse+gap if Close exists
+    try {
+      const footer = document.getElementById('requests-container')?.querySelector('.requests-footer') || document.querySelector('.requests-footer');
+      const closeBtn = footer ? footer.querySelector('.btn-close') : null;
+      if (closeBtn) {
+        // Find first visible confirm/refuse buttons in the list
+        const firstConfirm = list.querySelector('.btn-confirm');
+        const firstRefuse = list.querySelector('.btn-refuse');
+        if (firstConfirm && firstRefuse) {
+          // compute widths including margins/padding
+          const gap = parseFloat(getComputedStyle(list.querySelector('.request-actions'))?.gap) || 8;
+          const w1 = Math.ceil(firstConfirm.getBoundingClientRect().width);
+          const w2 = Math.ceil(firstRefuse.getBoundingClientRect().width);
+          const total = w1 + w2 + gap;
+          closeBtn.style.width = total + 'px';
+          closeBtn.style.minWidth = total + 'px';
+          closeBtn.style.maxWidth = total + 'px';
+          closeBtn.style.flex = '0 0 ' + total + 'px';
+        } else {
+          // No action buttons — clear sizing
+          closeBtn.style.width = '';
+          closeBtn.style.minWidth = '';
+          closeBtn.style.maxWidth = '';
+          closeBtn.style.flex = '';
+        }
+      }
+    } catch (e) { console.warn('requests: failed to size close button', e); }
   }
 
   function closeRequests() {
