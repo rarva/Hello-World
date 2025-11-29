@@ -154,11 +154,22 @@ function handleAuthSuccess(user, profileData = null) {
   // If a post-login return location was set (e.g. from an email validate
   // link), navigate there now so validate flow can complete.
   try {
-    const returnTo = sessionStorage.getItem('postLoginReturnTo');
+      let returnTo = sessionStorage.getItem('postLoginReturnTo');
+      try { if (returnTo) returnTo = decodeURIComponent(String(returnTo)); } catch (e) { /* ignore */ }
     if (returnTo) {
       sessionStorage.removeItem('postLoginReturnTo');
-      // If it's a relative path, navigate within the app. Use replace to
-      // avoid leaving a stale state in history.
+      // If the returnTo includes opening the Requests UI, prefer to avoid
+      // a full page reload: update the URL and open Requests in-place.
+      try {
+        const qp = new URLSearchParams((String(returnTo).split('?')[1]) || '');
+        if (qp.get('open_requests') === '1' && typeof window.openRequests === 'function') {
+          try { history.replaceState(null, '', returnTo); } catch (e) { /* ignore */ }
+          try { window.openRequests(); } catch (e) { /* ignore */ }
+          return;
+        }
+      } catch (e) { /* ignore parsing errors, fall back to navigation */ }
+
+      // Otherwise perform a normal navigation to the requested path
       try { window.location.replace(returnTo); return; } catch (e) { window.location.href = returnTo; return; }
     }
   } catch (e) { /* ignore */ }

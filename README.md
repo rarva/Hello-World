@@ -4,13 +4,18 @@ Rhomberg OrgChart Admin — multi-language authentication + onboarding demo (Sup
 
 Company design tokens: `--color-primary: #DA162A`, `--color-button: #EB8318`, `--color-black: #010101`
 
-## Current Version: v1.0.1-onboarding-complete (Latest: Avatar + Profile Onboarding)
+## Current Version: v1.0.6-manager-email-unify (Latest: Manager Email & Requests fixes)
 
 ### Development Status: ✅ STABLE
 Complete authentication system with post-signup onboarding, avatar management, and profile data collection fully implemented and tested.
 
-### Latest Update (Current Release - v1.0.1)
-**Avatar Upload & Profile Onboarding System**
+### Latest Update (Current Release - v1.0.6)
+**Manager Email & Requests UI Fixes**
+- Fixed Requests UI mounting so it only appears when items exist (avoids empty panel behind onboarding).
+- Added robust token resolution for requests list/respond calls and login-first validate links.
+- Forced sign-out behavior on email validate links to avoid same-browser session confusion.
+- Repaired avatar click handling so the user menu can open even while avatar prefetch is in progress.
+- Cleaned and consolidated email client shim and server send flow to use server-side template rendering.
 - **Avatar component:** Independent reusable component with drag-and-drop file selection
 - **Image compression:** Canvas-based compression to 220×220px PNG (30-80KB typical)
 - **Supabase Storage:** Public file hosting with automatic URL retrieval
@@ -277,7 +282,7 @@ node .\uniformity_checks\run_all_checks.js --sync
 
 ---
 
-**Version:** v1.0.1-onboarding-complete | **Updated:** November 20, 2025
+**Version:** v1.0.6-manager-email-unify | **Updated:** November 29, 2025
 
 ---
 

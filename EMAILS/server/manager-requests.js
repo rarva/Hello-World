@@ -102,7 +102,16 @@ export default async function handler(req) {
         if (host) baseUrl = `${proto}://${host}`;
       } catch (e) { baseUrl = ''; }
     }
-    const validateLink = `${(baseUrl || '').replace(/\/$/, '')}/requests/validate?token=${token}&email=${encodeURIComponent(manager_email)}`;
+    // Build a login-first link: direct the manager to the app login with
+    // their email prefilled and a return_to that will open the Requests
+    // container after sign-in. We also include `force_signout=1` so that
+    // if the manager clicks the link from a browser that has an existing
+    // session (e.g. the newly onboarded user), the client can sign out
+    // the current session and show the login form prefilled for the
+    // manager. This prevents landing the manager inside another user's
+    // active session.
+    const returnPath = `/?open_requests=1`;
+    const validateLink = `${(baseUrl || '').replace(/\/$/, '')}/?prefill_email=${encodeURIComponent(manager_email)}&force_signout=1&return_to=${encodeURIComponent(returnPath)}`;
 
     // Send the email using SendGrid. Prefer rendering the canonical server-side
     // template `EMAILS/templates/manager_notification.html` from the app host.

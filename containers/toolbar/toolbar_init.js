@@ -176,8 +176,12 @@ function setupAvatarButton() {
       const hasImg = !!(avatarEl && avatarEl.querySelector && avatarEl.querySelector('img'));
       const storeImage = (window.AvatarStore && typeof window.AvatarStore.getImage === 'function') ? window.AvatarStore.getImage() : null;
 
-      if (!window.currentUser || window.userDataReady === false || (!hasImg && !storeImage)) {
-        console.log('Avatar click ignored — user not ready or no avatar image', { hasImg, hasStoreImage: !!storeImage, userDataReady: window.userDataReady });
+      // Only block avatar clicks when there's no authenticated user.
+      // Allow opening the user menu even if avatar image or userDataReady
+      // hasn't completed yet — the profile modal will fetch/initialize
+      // as needed and is robust to missing avatar data.
+      if (!window.currentUser) {
+        console.log('Avatar click ignored — no currentUser', { userDataReady: window.userDataReady });
         e.preventDefault();
         return;
       }

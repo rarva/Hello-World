@@ -244,23 +244,56 @@ async function initLogin() {
   // managers can quickly sign in. Also store `return_to` in sessionStorage
   // so we can redirect after successful login.
   try {
-    const qp = new URLSearchParams(window.location.search || '');
-    const prefill = qp.get('prefill_email') || qp.get('email');
-    const returnTo = qp.get('return_to');
-    if (prefill) {
-      const emailEl = document.getElementById('email');
-      if (emailEl) {
-        emailEl.value = decodeURIComponent(String(prefill));
-        const pwd = document.getElementById('password');
-        if (pwd) {
-          // focus the password after a short delay so it feels natural
-          setTimeout(() => { try { pwd.focus(); } catch (e) {} }, 120);
+      const qp = new URLSearchParams(window.location.search || '');
+      const prefill = qp.get('prefill_email') || qp.get('email');
+      const returnTo = qp.get('return_to');
+
+      if (prefill) {
+        const decodedEmail = decodeURIComponent(String(prefill));
+        const emailEl = document.getElementById('email');
+        if (emailEl) {
+          emailEl.value = decodedEmail;
+          const pwd = document.getElementById('password');
+          if (pwd) {
+            // focus the password after a short delay so it feels natural
+            setTimeout(() => { try { pwd.focus(); } catch (e) {} }, 120);
+          }
+        }
+
+        // Decide whether to show signup or login based on whether the email
+        // corresponds to an existing profile. If the email is unknown, switch
+        // to signup mode so managers who are new will see the signup flow.
+        try {
+          let exists = false;
+          if (window.supabase && typeof window.supabase.from === 'function') {
+            try {
+              const { data, error } = await window.supabase
+                .from('profiles')
+                .select('id')
+                .eq('email', decodedEmail)
+                .maybeSingle();
+              if (!error && data) exists = true;
+            } catch (e) { /* ignore lookup errors */ }
+          }
+          // If profile doesn't exist, enable signup mode; otherwise ensure login mode
+          if (!exists && !app.isSignupMode) {
+            toggleSignupMode();
+          } else if (exists && app.isSignupMode) {
+            toggleSignupMode();
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      if (returnTo) {
+        try {
+          // store decoded returnTo so callers later receive a usable path
+          // (some senders URL-encode the return_to value)
+          const decoded = decodeURIComponent(String(returnTo));
+          sessionStorage.setItem('postLoginReturnTo', decoded);
+        } catch (e) {
+          try { sessionStorage.setItem('postLoginReturnTo', returnTo); } catch (e) { /* ignore */ }
         }
       }
-    }
-    if (returnTo) {
-      try { sessionStorage.setItem('postLoginReturnTo', returnTo); } catch (e) { /* ignore */ }
-    }
   } catch (e) { /* ignore parsing errors */ }
 }
 
