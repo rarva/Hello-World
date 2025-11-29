@@ -525,6 +525,41 @@
     "fr": "Demandes",
     "it": "Richieste"
   },
+  "requests.empty_no_requests": {
+    "en": "No requests.",
+    "pt": "Sem solicitações.",
+    "de": "Keine Anfragen.",
+    "fr": "Aucune demande.",
+    "it": "Nessuna richiesta."
+  },
+  "requests.empty_error": {
+    "en": "Failed to load requests.",
+    "pt": "Falha ao carregar solicitações.",
+    "de": "Fehler beim Laden der Anfragen.",
+    "fr": "Échec du chargement des demandes.",
+    "it": "Impossibile caricare le richieste."
+  },
+  "requests.message": {
+    "en": "From: {email} — {name} declared to report to you.",
+    "pt": "De: {email} — {name} declarou que se reporta a você.",
+    "de": "Von: {email} — {name} hat gemeldet, dass er Ihnen berichtet.",
+    "fr": "De : {email} — {name} a déclaré vous reporter.",
+    "it": "Da: {email} — {name} ha dichiarato di riferire a te."
+  },
+  "requests.message_no_info": {
+    "en": "Request details unavailable.",
+    "pt": "Detalhes da solicitação não disponíveis.",
+    "de": "Anfragedetails nicht verfügbar.",
+    "fr": "Détails de la demande indisponibles.",
+    "it": "Dettagli della richiesta non disponibili."
+  },
+  "requests.confirm": { "en": "Confirm", "pt": "Confirmar", "de": "Bestätigen", "fr": "Confirmer", "it": "Conferma" },
+  "requests.refuse": { "en": "Refuse", "pt": "Recusar", "de": "Ablehnen", "fr": "Refuser", "it": "Rifiuta" },
+  "requests.confirm_aria": { "en": "Confirm request from {who}", "pt": "Confirmar solicitação de {who}", "de": "Anfrage von {who} bestätigen", "fr": "Confirmer la demande de {who}", "it": "Conferma richiesta da {who}" },
+  "requests.refuse_aria": { "en": "Refuse request from {who}", "pt": "Recusar solicitação de {who}", "de": "Anfrage von {who} ablehnen", "fr": "Refuser la demande de {who}", "it": "Rifiuta richiesta da {who}" },
+  "requests.confirmed": { "en": "Confirmed", "pt": "Confirmado", "de": "Bestätigt", "fr": "Confirmé", "it": "Confermato" },
+  "requests.refused": { "en": "Refused", "pt": "Recusado", "de": "Abgelehnt", "fr": "Refusé", "it": "Rifiutato" },
+  "requests.load_failed_template": { "en": "Failed to load requests template.", "pt": "Falha ao carregar o template de solicitações.", "de": "Fehler beim Laden der Anfragevorlage.", "fr": "Échec du chargement du modèle des demandes.", "it": "Impossibile caricare il modello delle richieste." },
   "profile.lastName": {
     "en": "Last Name",
     "pt": "Sobrenome",

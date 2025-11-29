@@ -3,7 +3,7 @@
 
   async function loadTemplate() {
     const r = await fetch(tplPath);
-    if (!r.ok) throw new Error('Failed to load requests template');
+    if (!r.ok) throw new Error((window.getString && typeof window.getString === 'function') ? window.getString('requests.load_failed_template') : 'Failed to load requests template');
     return await r.text();
   }
 
@@ -115,7 +115,8 @@
     if (!data.items || data.items.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'requests-empty';
-      empty.textContent = data._fetchError ? 'Failed to load requests.' : 'No requests.';
+      const txtKey = data._fetchError ? 'requests.empty_error' : 'requests.empty_no_requests';
+      empty.textContent = (window.getString && typeof window.getString === 'function') ? window.getString(txtKey) : (data._fetchError ? 'Failed to load requests.' : 'No requests.');
       list.appendChild(empty);
     } else {
       data.items.forEach((it) => {
@@ -133,6 +134,16 @@
         const renderMessage = () => {
           const displayEmail = email || '';
           const displayName = name || '';
+          if (window.getString && typeof window.getString === 'function') {
+            const tpl = window.getString('requests.message');
+            if (tpl && tpl.indexOf('{email}') !== -1) {
+              message.textContent = tpl.replace('{email}', displayEmail).replace('{name}', displayName);
+              return;
+            }
+            // fallback when message template not present
+            message.textContent = (displayEmail || displayName) ? `${displayEmail} ${displayName}` : (window.getString('requests.message_no_info') || 'Request details unavailable.');
+            return;
+          }
           message.textContent = `From: ${displayEmail} - ${displayName} declared to reports to you.`;
         };
         renderMessage();
@@ -162,13 +173,13 @@
 
         const confirm = document.createElement('button');
         confirm.className = 'btn btn-primary btn-confirm';
-        confirm.textContent = 'Confirm';
-        confirm.setAttribute('aria-label', `Confirm request from ${name || email}`);
+        confirm.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.confirm') : 'Confirm';
+        try { confirm.setAttribute('aria-label', ((window.getString && typeof window.getString === 'function') ? window.getString('requests.confirm_aria').replace('{who}', (name || email || '').trim()) : `Confirm request from ${name || email}`)); } catch (e) { /* ignore */ }
 
         const refuse = document.createElement('button');
         refuse.className = 'btn btn-primary btn-refuse';
-        refuse.textContent = 'Refuse';
-        refuse.setAttribute('aria-label', `Refuse request from ${name || email}`);
+        refuse.textContent = (window.getString && typeof window.getString === 'function') ? window.getString('requests.refuse') : 'Refuse';
+        try { refuse.setAttribute('aria-label', ((window.getString && typeof window.getString === 'function') ? window.getString('requests.refuse_aria').replace('{who}', (name || email || '').trim()) : `Refuse request from ${name || email}`)); } catch (e) { /* ignore */ }
 
         async function doRespond(action) {
           confirm.disabled = true; refuse.disabled = true;
@@ -180,7 +191,8 @@
             if (!r.ok) throw new Error('respond_failed');
             const j = await r.json().catch(() => ({}));
             if (j && j.ok) {
-              actions.innerHTML = `<em>${action === 'accept' ? 'Confirmed' : 'Refused'}</em>`;
+              const key = action === 'accept' ? 'requests.confirmed' : 'requests.refused';
+              actions.innerHTML = `<em>${(window.getString && typeof window.getString === 'function') ? window.getString(key) : (action === 'accept' ? 'Confirmed' : 'Refused')}</em>`;
             } else {
               throw new Error('response_not_ok');
             }
