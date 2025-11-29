@@ -154,6 +154,21 @@ try {
       action: 'settings',
       handler: async () => { console.log('Settings clicked'); }
     },
+    requests: {
+      action: 'requests',
+      handler: async () => {
+        try { closeProfileModal(); } catch (e) { /* ignore */ }
+        try {
+          if (typeof window.openRequests === 'function') {
+            await window.openRequests();
+          } else {
+            console.warn('openRequests not available');
+          }
+        } catch (err) {
+          console.error('Failed to open Requests from profile menu', err);
+        }
+      }
+    },
     logout: {
       action: 'logout',
       handler: async () => { await handleLogout(); }
@@ -176,8 +191,9 @@ try {
     try {
       const editBtn = document.getElementById('profile-edit-btn');
       const settingsBtn = document.getElementById('profile-settings-btn');
+      const requestsBtn = document.getElementById('profile-requests-btn');
       const logoutBtn = document.getElementById('profile-logout-btn');
-      console.log('DEBUG: USER_MENU listeners attached', { edit: !!editBtn, settings: !!settingsBtn, logout: !!logoutBtn });
+      console.log('DEBUG: USER_MENU listeners attached', { edit: !!editBtn, settings: !!settingsBtn, requests: !!requestsBtn, logout: !!logoutBtn });
     } catch(e) {}
 
     // Add a delegated click detector to capture clicks even if listeners fail to attach

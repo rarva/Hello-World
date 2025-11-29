@@ -137,6 +137,75 @@ export default async function handler(req) {
       content: []
     };
 
+    // If a local template alias for manager_notification is requested, render
+    // the canonical template from the app and override subject/content.
+    const isManagerTemplate = (templateName === 'manager_notification') || (templateData && templateData.template === 'manager_notification');
+    if (isManagerTemplate) {
+      // attempt to locate base URL (prefer env, fallback to request host)
+      let baseUrl = (process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || '').trim();
+      if (!baseUrl) {
+        try {
+          const proto = req.headers.get('x-forwarded-proto') || req.headers.get('x-forwarded-protocol') || 'https';
+          const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+          if (host) baseUrl = `${proto}://${host}`;
+        } catch (e) { baseUrl = ''; }
+      }
+
+      const formatDateShort = (iso) => {
+        try {
+          const d = new Date(iso);
+          return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
+        } catch (e) { return String(iso).split('T')[0]; }
+      };
+
+      try {
+        if (baseUrl) {
+          const tplUrl = `${(baseUrl || '').replace(/\/$/, '')}/EMAILS/templates/manager_notification.html`;
+          const tplRes = await fetchWithTimeout(tplUrl, {}, 7000);
+          if (tplRes.ok) {
+            let tplText = await tplRes.text();
+            const esc = (s) => String(s == null ? '' : s)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+
+            const td = templateData || {};
+            const expiresAtVal = td.expiresAt || new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString();
+            const expiresDateVal = formatDateShort(expiresAtVal);
+
+            // Resolve managerName Handlebars conditional blocks first
+            try {
+              if (!td.managerName || !String(td.managerName).trim()) {
+                tplText = tplText.replace(/\{\{\#if\s+managerName\}\}[\s\S]*?\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+                tplText = tplText.replace(/\{\{\#if\s+managerName\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+              } else {
+                tplText = tplText.replace(/\{\{\#if\s+managerName\}\}[\s\S]*?\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g, td.managerName);
+                tplText = tplText.replace(/\{\{\#if\s+managerName\}\}([\s\S]*?)\{\{\/if\}\}/g, td.managerName);
+              }
+            } catch (e) { /* ignore */ }
+
+            tplText = tplText.replace(/\{\{\s*validateLink\s*\}\}/g, esc(td.validateLink || ''))
+              .replace(/\{\{\s*userName\s*\}\}/g, esc(td.userName || ''))
+              .replace(/\{\{\s*managerName\s*\}\}/g, esc(td.managerName || ''))
+              .replace(/\{\{\s*company\s*\}\}/g, esc(td.company || ''))
+              .replace(/\{\{\s*expiresAt\s*\}\}/g, esc(expiresAtVal || ''))
+              .replace(/\{\{\s*expiresDate\s*\}\}/g, esc(expiresDateVal || ''))
+              .replace(/\{\{\s*userEmail\s*\}\}/g, esc(td.userEmail || td.user_email || ''))
+              .replace(/\{\{\s*supportEmail\s*\}\}/g, esc(process.env.SUPPORT_EMAIL || 'rarva@hotmail.com'));
+
+            // override payload subject and html content
+            const subj = (td.userName && String(td.userName).trim()) ? `${String(td.userName).trim()} request validation.` : (subject || 'Notification');
+            payload.subject = subj;
+            payload.content = [{ type: 'text/html', value: tplText }];
+          }
+        }
+      } catch (e) {
+        console.warn('send-manager-notification: failed to fetch/render local manager template', e && (e.name || e.message));
+      }
+    }
+
     if (html) payload.content.push({ type: 'text/html', value: html });
     if (text) payload.content.push({ type: 'text/plain', value: text });
 

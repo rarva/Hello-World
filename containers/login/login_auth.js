@@ -239,6 +239,35 @@ function handleAuthSuccess(user, profileData = null) {
     } catch (e) {
       console.warn('Avatar prefetch unexpected error', e);
     } finally {
+      // Before signalling that user data is ready, proactively check if
+      // the signed-in user has pending manager-requests and open the
+      // Requests container if so. This ensures managers land on their
+      // pending requests immediately after login.
+      try {
+        try {
+          let token = null;
+          try { const { data: { session } } = await window.supabase.auth.getSession(); token = session?.access_token || null; } catch (e) { /* ignore */ }
+          const headers = { 'Accept': 'application/json' };
+          if (token) headers['Authorization'] = 'Bearer ' + token;
+
+          let listRes = null;
+          try { listRes = await fetch('/api/manager-requests/list', { method: 'GET', headers }); } catch (e) { listRes = null; }
+          if (listRes && listRes.ok) {
+            try {
+              const listData = await listRes.json().catch(() => null);
+              if (listData && Array.isArray(listData.items) && listData.items.length > 0) {
+                try {
+                  if (typeof window.openRequests === 'function') {
+                    console.info('Login: pending requests found — opening Requests container');
+                    await window.openRequests();
+                  }
+                } catch (e) { console.warn('Login: openRequests failed', e); }
+              }
+            } catch (e) { /* ignore parse errors */ }
+          }
+        } catch (e) { console.warn('Login: failed to check pending requests', e); }
+      } catch (e) { /* ignore */ }
+
       // Mark that user data is loaded in memory and notify listeners
       try { window.userDataReady = true; } catch (e) { /* ignore */ }
       try { document.dispatchEvent(new CustomEvent('userDataReady')); } catch (e) { /* ignore */ }

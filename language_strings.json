@@ -518,6 +518,13 @@
     "fr": "Prénom",
     "it": "Nome"
   },
+  "profile.requests": {
+    "en": "Requests",
+    "pt": "Solicitações",
+    "de": "Anfragen",
+    "fr": "Demandes",
+    "it": "Richieste"
+  },
   "profile.lastName": {
     "en": "Last Name",
     "pt": "Sobrenome",

@@ -67,6 +67,14 @@ export default async function handler(req) {
     const token = Array.from(rand).map(b => ('00' + b.toString(16)).slice(-2)).join('');
     const tokenHash = await sha256Base64Url(token);
     const expiresAt = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(); // 7 days
+    // Friendly, date-only string for emails (e.g. "Nov 30, 2025")
+    const formatDateShort = (iso) => {
+      try {
+        const d = new Date(iso);
+        return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
+      } catch (e) { return String(iso).split('T')[0]; }
+    };
+    const expiresDate = formatDateShort(expiresAt);
 
     // Attempt to insert into Supabase REST using provided `user_id` (best-effort).
     // If `user_id` is not supplied we will still send the email but record a
@@ -90,6 +98,22 @@ export default async function handler(req) {
         console.warn('manager-requests: manager_requests_insert_error', e && (e.name || e.message));
       }
     }
+
+    // Attempt to resolve the requester's email (if not provided in payload)
+    // The onboarding flow may not pass `userEmail`, so try to lookup from profiles table.
+    let requesterEmail = (body && (body.userEmail || body.user_email)) || null;
+    if (!requesterEmail && requesterId && supabaseUrl) {
+      try {
+        const qUrl = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/profiles?id=eq.${encodeURIComponent(requesterId)}&select=email`;
+        const qRes = await fetchWithTimeout(qUrl, { method: 'GET', headers: Object.assign({ Accept: 'application/json' }, supabaseAnonKey ? { apikey: supabaseAnonKey } : {}) }, 7000);
+        if (qRes && qRes.ok) {
+          const j = await qRes.json().catch(() => null);
+          if (Array.isArray(j) && j.length > 0 && j[0].email) requesterEmail = j[0].email;
+        }
+      } catch (e) { /* ignore lookup failure - it's best-effort */ }
+    }
+    // Ensure body.userEmail is available for template substitutions
+    try { if (!body) body = {}; body.userEmail = requesterEmail || (body.userEmail || body.user_email || ''); } catch (e) {}
 
     // Build validate link
     // Determine a usable base URL for the validate link. Prefer explicit env var;
@@ -128,6 +152,18 @@ export default async function handler(req) {
         const tplRes = await fetchWithTimeout(tplUrl, {}, 7000);
         if (tplRes.ok) {
           let tplText = await tplRes.text();
+          // resolve Handlebars-style conditional for managerName if present in template
+          // replace the whole block {{#if managerName}}...{{else}}...{{/if}} with managerName or empty string
+          try {
+            if (!managerName || !String(managerName).trim()) {
+              tplText = tplText.replace(/\{\{\#if\s+managerName\}\}[\s\S]*?\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+              tplText = tplText.replace(/\{\{\#if\s+managerName\}\}[\s\S]*?\{\{\/if\}\}/g, '');
+            } else {
+              tplText = tplText.replace(/\{\{\#if\s+managerName\}\}[\s\S]*?\{\{else\}\}[\s\S]*?\{\{\/if\}\}/g, managerName);
+              tplText = tplText.replace(/\{\{\#if\s+managerName\}\}([\s\S]*?)\{\{\/if\}\}/g, managerName);
+            }
+          } catch (e) { /* ignore conditional parsing errors */ }
+
           // simple HTML escape to avoid accidental injection
           const esc = (s) => String(s == null ? '' : s)
             .replace(/&/g, '&amp;')
@@ -139,7 +175,10 @@ export default async function handler(req) {
             .replace(/\{\{\s*userName\s*\}\}/g, esc(userName || ''))
             .replace(/\{\{\s*managerName\s*\}\}/g, esc(managerName || ''))
             .replace(/\{\{\s*company\s*\}\}/g, esc(company || ''))
-            .replace(/\{\{\s*expiresAt\s*\}\}/g, esc(expiresAt || ''));
+            .replace(/\{\{\s*expiresAt\s*\}\}/g, esc(expiresAt || ''))
+            .replace(/\{\{\s*expiresDate\s*\}\}/g, esc(expiresDate || ''))
+            .replace(/\{\{\s*userEmail\s*\}\}/g, esc(body.userEmail || ''))
+            .replace(/\{\{\s*supportEmail\s*\}\}/g, esc(process.env.SUPPORT_EMAIL || 'rarva@hotmail.com'));
           htmlBody = tplText;
         }
       }
@@ -150,18 +189,19 @@ export default async function handler(req) {
     if (!htmlBody) {
       const safeManagerName = managerName && String(managerName).trim() ? String(managerName).trim() : '';
       const safeUserName = userName && String(userName).trim() ? String(userName).trim() : '';
-      const subject = safeUserName ? `${safeUserName} has been added as a report` : 'Manager notification';
+      const subject = safeUserName ? `${safeUserName} request validation.` : 'Manager notification';
       const greeting = safeManagerName ? `Hello ${safeManagerName},` : 'Hello,';
       htmlBody = `${greeting}<br/><br/><strong>${safeUserName || ''}</strong> has been added as a direct report to ${company || ''}.<br/><br/>` +
-        `<a href=\"${validateLink}\" style=\"display:inline-block;padding:10px 14px;background:#0070f3;color:#fff;border-radius:4px;text-decoration:none\">View / Validate</a>` +
+        `<a href=\"${validateLink}\" style=\"display:inline-block;padding:10px 14px;background:#DA162A;color:#fff;border-radius:10px;text-decoration:none;font-weight:600\">Review & Validate</a>` +
         `<div style=\"margin-top:12px;font-size:12px;color:#666\">If the button above does not work, open this link in your browser:<br/><a href=\"${validateLink}\">${validateLink}</a></div>` +
-        `<p style=\"color:#666;font-size:12px\">This link expires at ${expiresAt}</p>`;
+        `<p style=\"color:#666;font-size:12px\">This link expires on ${expiresDate}</p>`;
     }
 
+    const safeSubject = (userName && String(userName).trim()) ? `${String(userName).trim()} request validation.` : `Manager notification from ${company || ''}`;
     const payload = {
       personalizations: [{ to: [{ email: manager_email }] }],
       from: { email: emailFrom },
-      subject: `Manager notification from ${company || ''}`,
+      subject: safeSubject,
       content: [ { type: 'text/html', value: htmlBody } ]
     };
 

@@ -1,34 +1,80 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Manager Notification</title>
-    <style>
-      body{font-family:Arial,Helvetica,sans-serif;color:#222}
-      .container{max-width:600px;margin:24px auto;padding:16px;border:1px solid #eee}
-      .header{font-size:18px;font-weight:700;margin-bottom:8px}
-      .muted{color:#666;font-size:13px}
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">You have a new report: {{userName}}</div>
-      <div>Hello {{managerName}},</div>
-      <p>
-        This is an automated notification from {{company}} to let you know that
-        <strong>{{userName}}</strong> has been added as a direct report to your team.
-      </p>
-      <p>
-        To view or validate this request, please click the button below. The link will expire on <strong>{{expiresAt}}</strong>.
-      </p>
-      <p style="text-align:center;margin:18px 0;">
-        <a href="{{validateLink}}" style="display:inline-block;padding:10px 16px;background:#0070f3;color:#fff;border-radius:4px;text-decoration:none;font-weight:600">View / Validate</a>
-      </p>
-      <p>
-        If you have questions, please sign in to the application to view the full profile.
-      </p>
-      <p class="muted">This message was generated automatically — please do not reply.</p>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{userName}} request validation.</title>
+</head>
+<body style="margin:0;padding:20px;background:#ffffff;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;color:#0b0b0b;line-height:1.45;font-size:15px;">
+  <div style="max-width:680px;margin:0 auto;">
+    <!-- Outer red outline box with app bg color and app radius -->
+    <div style="border:1px solid #DA162A;border-radius:10px;background:#f5f5f5;padding:16px;box-sizing:border-box;">
+      <!-- Inner white card (keeps content visually distinct) -->
+      <div style="background:#f5f5f5;border-radius:10px;padding:20px;box-sizing:border-box;">
+
+
+<p style="margin:0 0 12px;font-size:30px;font-weight:700;color:#DA162A;">
+         
+         Rhomberg's Organizational Charts
+        </p>
+        
+        <br>
+        
+        <p style="margin:0 0 12px;font-size:15px;">
+          Hello {{#if managerName}}{{managerName}}{{else}}there{{/if}},
+        </p>
+
+        <p style="margin:0 0 12px;font-size:15px;">
+          I'm <strong style="font-weight:600">{{userName}}</strong> — I've just joined Rhomberg's Organizational Charts Unicorn App.
+         
+        </p>
+
+<p style="margin:0 0 12px;font-size:15px;">
+         
+          I set you as the person I report to. 
+        </p>
+<p style="margin:0 0 12px;font-size:15px;">
+         
+       Could you please be so kind as to validate this reporting relationship?
+        </p>
+<p style="margin:0 0 12px;font-size:15px;">
+         
+      Just click the button below.
+        </p>
+
+
+
+        <div style="text-align:center;margin:18px 0;">
+          <a href="{{validateLink}}"
+             style="display:inline-block;padding:12px 20px;border-radius:10px;background:#DA162A;color:#ffffff;text-decoration:none;font-weight:600;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:15px;">
+            Review &amp; Validate
+          </a>
+        </div>
+
+
+<br
+        <p style="margin:0 0 12px;font-size:15px;">
+          Any questions, let me know — my email is: <a href="mailto:{{userEmail}}" style="color:#0b66ff;text-decoration:none;">{{userEmail}}</a>
+        </p>
+
+        <p style="margin:20px 0 0;font-size:15px;">
+          Thank you and hope to see you soon!
+          <br><strong style="font-weight:600">{{userName}}</strong>
+        </p>
+      </div>
+
+<p style="margin:0 0 12px;color:#6b7280;font-size:15px;">
+          This link will expire on <strong style="color:#111">{{expiresDate}}</strong>.
+        </p>
+
+
+      <!-- Footer sits inside the red-outline area so it's included in the outline -->
+      <div style="margin-top:12px;font-size:15px;color:#9aa1aa;text-align:left;padding:6px 4px;">
+        <p style="margin:0;">If the button doesn't work, copy and paste this link into your browser:</p>
+        <p style="word-break:break-all;margin:6px 0;"><a href="{{validateLink}}" style="color:#0b66ff;text-decoration:none;">{{validateLink}}</a></p>
+        <p style="margin-top:8px;">Need help? Reply to this email or contact <a href="mailto:{{supportEmail}}" style="color:#0b66ff;text-decoration:none;">{{supportEmail}}</a>.</p>
+      </div>
     </div>
-  </body>
+  </div>
+</body>
 </html>
