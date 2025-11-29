@@ -4,12 +4,12 @@ Rhomberg OrgChart Admin — multi-language authentication + onboarding demo (Sup
 
 Company design tokens: `--color-primary: #DA162A`, `--color-button: #EB8318`, `--color-black: #010101`
 
-## Current Version: v1.0.6-manager-email-unify (Latest: Manager Email & Requests fixes)
+## Current Version: v1.0.7-manager-email-unify (Latest: Manager Email & Requests fixes)
 
 ### Development Status: ✅ STABLE
 Complete authentication system with post-signup onboarding, avatar management, and profile data collection fully implemented and tested.
 
-### Latest Update (Current Release - v1.0.6)
+### Latest Update (Current Release - v1.0.7)
 **Manager Email & Requests UI Fixes**
 - Fixed Requests UI mounting so it only appears when items exist (avoids empty panel behind onboarding).
 - Added robust token resolution for requests list/respond calls and login-first validate links.
@@ -282,7 +282,7 @@ node .\uniformity_checks\run_all_checks.js --sync
 
 ---
 
-**Version:** v1.0.6-manager-email-unify | **Updated:** November 29, 2025
+**Version:** v1.0.7-manager-email-unify | **Updated:** November 29, 2025
 
 ---
 

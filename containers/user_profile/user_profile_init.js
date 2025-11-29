@@ -9,26 +9,34 @@
 (function(){
 	const tplPath = 'containers/user_profile/user_profile.html';
 
-	// Backup storage for detaching/restoring `#home-container` without using styles
-	let homeBackup = null;
+	// No home detach/restore: this module will not remove or restore `#home-container`.
 
 	async function loadTemplate(){
 		const r = await fetch(tplPath);
+		try { console.info('[user_profile:flag] loadTemplate fetched', { ok: r.ok, status: r.status, url: tplPath }); } catch(e){}
 		if (!r.ok) throw new Error('Failed to load user profile template');
-		return await r.text();
+		const txt = await r.text();
+		try { console.info('[user_profile:flag] loadTemplate length', { len: txt && txt.length }); } catch(e){}
+		return txt;
 	}
 
     
     // Ensure the profile stylesheet is loaded
-    (function ensureProfileStyles() {
-    if (!document.querySelector('link[data-profile-styles]')) {
-        const l = document.createElement('link');
-        l.rel = 'stylesheet';
-        l.href = '/containers/user_profile/user_profile_styles.css';
-        l.setAttribute('data-profile-styles', '1');
-        document.head.appendChild(l);
-    }
-    })();
+	(function ensureProfileStyles() {
+	try {
+		const existing = document.querySelector('link[data-profile-styles]');
+		if (!existing) {
+			const l = document.createElement('link');
+			l.rel = 'stylesheet';
+			l.href = '/containers/user_profile/user_profile_styles.css';
+			l.setAttribute('data-profile-styles', '1');
+			document.head.appendChild(l);
+			console.info('[user_profile:flag] profile stylesheet injected', { href: l.href });
+		} else {
+			try { console.info('[user_profile:flag] profile stylesheet already present', { href: existing.href }); } catch(e){}
+		}
+	} catch(e) { console.warn('[user_profile:flag] ensureProfileStyles failed', e); }
+	})();
 
 	// Small helper: open native date picker for an input (uses showPicker when available)
 	function openNativeDatePickerFor(input) {
@@ -86,32 +94,92 @@
 		// 1) If the profile is already mounted, show it and return.
 		// This keeps behavior idempotent when the user clicks Edit multiple times.
 		const existing = document.getElementById('user-profile');
+		try { if (existing) console.info('[user_profile:flag] existing mount detected', { computedDisplay: getComputedStyle(existing).display, inlineDisplay: existing.style ? existing.style.display : null, hasVisibleClass: existing.classList && existing.classList.contains('visible') }); } catch(e){}
 
-		// 2) Detach the `#home-container` node from the DOM so it is hidden
-		// without changing any inline styles. We save the parent and nextSibling
-		// so the node can be re-inserted in the original location on close.
-		const home = document.getElementById('home-container');
-		if (home && !homeBackup) {
-			homeBackup = { parent: home.parentNode, nextSibling: home.nextSibling, node: home };
-			homeBackup.parent.removeChild(homeBackup.node);
+		// If an existing mount is found, always attempt to re-assert visibility.
+		if (existing) {
+			try {
+				if (!existing.classList || !existing.classList.contains('visible')) {
+					try { existing.classList.add('visible'); } catch(e){}
+				}
+				if (existing.style && existing.style.display === 'none') {
+					try { existing.style.removeProperty('display'); console.info('[user_profile:flag] cleared inline display from existing mount'); } catch(e){}
+				}
+				try { console.info('[user_profile:flag] existing mount after re-show computedDisplay', getComputedStyle(existing).display); } catch(e){}
+				requestAnimationFrame(() => { try { console.info('[user_profile:flag] existing rAF computedDisplay', getComputedStyle(existing).display); } catch(e){} });
+				setTimeout(() => { try { console.info('[user_profile:flag] existing timeout(60ms) computedDisplay', getComputedStyle(existing).display); } catch(e){} }, 60);
+
+				// Attempt to re-populate fields when re-showing an existing mount.
+				try {
+					if (typeof window.populateUserProfile === 'function') {
+						console.info('[user_profile:flag] calling window.populateUserProfile for existing mount');
+						window.populateUserProfile().then(() => {
+							console.info('[user_profile:flag] window.populateUserProfile finished for existing mount');
+						}).catch(err => {
+							console.warn('[user_profile:flag] window.populateUserProfile rejected for existing mount', err);
+						});
+					} else {
+						console.info('[user_profile:flag] window.populateUserProfile not available for existing mount');
+					}
+				} catch (e) { console.warn('[user_profile:flag] error invoking window.populateUserProfile', e); }
+			} catch (e) { console.warn('[user_profile:flag] failed to re-show existing mount', e); }
 		}
+
+		// Intentionally do not manipulate `#home-container` here. If the
+		// home view should be hidden or unmounted, that is handled elsewhere
+		// by the app shell or router. Leaving `#home-container` untouched
+		// avoids fragile DOM parent/nextSibling restore logic.
 
 		// If already mounted, reuse it; otherwise load and insert the template.
 		let mount = existing || null;
 		if (!mount) {
 			try{
+				console.info('[user_profile:flag] creating new mount - calling loadTemplate');
 				const html = await loadTemplate();
+				console.info('[user_profile:flag] loadTemplate returned', { htmlLen: html && html.length });
 				const frag = document.createRange().createContextualFragment(html);
 				// prefer template's own root with class user-profile or id user-profile
 				mount = frag.querySelector('#user-profile.user-profile') || frag.querySelector('.user-profile') || frag.firstElementChild;
-				if (!mount){ mount = document.createElement('div'); mount.id = 'user-profile'; mount.className = 'user-profile'; while(frag.firstChild) mount.appendChild(frag.firstChild); }
+				if (!mount){
+					mount = document.createElement('div');
+					mount.id = 'user-profile';
+					mount.className = 'user-profile';
+					while(frag.firstChild) mount.appendChild(frag.firstChild);
+					console.info('[user_profile:flag] created fallback mount element');
+				}
+				try { console.info('[user_profile:flag] selected mount element', { id: mount.id, class: mount.className }); } catch(e){}
 
 				// 3) Insert the template root into the main layout so it participates
 				// in the page's flex layout (grows between toolbar and footer).
 				const main = document.getElementById('main-container') || document.body;
 				const footer = document.getElementById('footer-container');
-				if (footer && footer.parentNode === main) main.insertBefore(mount, footer);
-				else main.appendChild(mount);
+				try {
+					if (footer && footer.parentNode === main) {
+						main.insertBefore(mount, footer);
+						console.info('[user_profile:flag] inserted mount before footer', { mainId: main.id || null, footerId: footer.id || null });
+					} else {
+						main.appendChild(mount);
+						console.info('[user_profile:flag] appended mount to main', { mainId: main.id || null });
+					}
+				} catch (e) {
+					console.warn('[user_profile:flag] insertion into main failed - falling back to body append', e);
+					document.body.appendChild(mount);
+				}
+
+				// Ensure the mounted profile is visible immediately. Some navigation
+				// flows load CSS after DOM insertion which can leave the element
+				// computed as display:none. Add the 'visible' class and clear any
+				// inline display to avoid the first-click invisible panel.
+				try {
+					mount.classList.add('visible');
+					if (mount.style && mount.style.display === 'none') {
+						try { console.info('[user_profile:flag] removing inline display:none from mount'); } catch(e){}
+						mount.style.removeProperty('display');
+					}
+					try { console.info('[user_profile:flag] after add visible immediate computedDisplay', getComputedStyle(mount).display); } catch(e){}
+					requestAnimationFrame(() => { try { console.info('[user_profile:flag] rAF computedDisplay', getComputedStyle(mount).display); } catch(e){} });
+					setTimeout(() => { try { console.info('[user_profile:flag] timeout(60ms) computedDisplay', getComputedStyle(mount).display); } catch(e){} }, 60);
+				} catch (e) { /* non-fatal */ }
 
 				// Load translation strings if a loader exists, then translate any
 				// `data-i18n` attributes inside the mounted template so labels and
@@ -146,34 +214,65 @@
 				async function populateUserProfile(profile) {
 					try {
 						let data = profile || null;
+						try { console.info('[user_profile:flag] populateUserProfile start', { haveProfileArg: !!profile, haveWindowCurrentProfileData: !!window.currentProfileData, haveSupabase: !!window.supabase, haveWindowCurrentUser: !!window.currentUser }); } catch(e){}
+
 						// If no profile passed, try to fetch from Supabase using currentUser
 						const user = window.currentUser || null;
-						if (!data && user && window.supabase) {
+						// resolve id from window.currentUser if possible
+						let id = null;
+						if (user) {
+							try { id = user.id || user.user?.id || user.sub || user.uid || null; } catch(e) { id = null; }
+							try { console.info('[user_profile:flag] resolved id from window.currentUser', { id }); } catch(e){}
+						}
+
+						// If no id yet, try supabase session fallback
+						if (!id && window.supabase && window.supabase.auth && typeof window.supabase.auth.getSession === 'function') {
 							try {
-								const id = user.id || user.user?.id || user.sub || user.uid || null;
-								if (id) {
-									const { data: p, error } = await window.supabase
-										.from('profiles')
-										.select('*')
-										.eq('id', id)
-										.single();
-									if (!error) data = p;
-								}
-							} catch (e) { console.warn('Failed to fetch profile inside populateUserProfile', e); }
+								const sess = await window.supabase.auth.getSession();
+								id = sess?.data?.session?.user?.id || sess?.data?.user?.id || null;
+								try { console.info('[user_profile:flag] derived id from supabase.auth.getSession', { id }); } catch(e){}
+							} catch (e) { console.warn('[user_profile:flag] supabase.auth.getSession failed', e); }
+						}
+
+						// If no data and we have an id + supabase, query profiles
+						if (!data && id && window.supabase) {
+							try {
+								const { data: p, error } = await window.supabase
+									.from('profiles')
+									.select('*')
+									.eq('id', id)
+									.single();
+								try { console.info('[user_profile:flag] supabase profiles query result', { id, hasData: !!p, error: error ? (error.message || error) : null }); } catch(e){}
+								if (!error && p) data = p;
+							} catch (e) { console.warn('[user_profile:flag] supabase query exception', e); }
+						} else {
+							try { if (!data) console.info('[user_profile:flag] skipping supabase query', { id, haveSupabase: !!window.supabase }); } catch(e){}
 						}
 
 						// Fallback to window-stored profileData if present
-						if (!data && window.currentProfileData) data = window.currentProfileData;
+						if (!data && window.currentProfileData) {
+							try { console.info('[user_profile:flag] using window.currentProfileData fallback', { hasData: !!window.currentProfileData }); } catch(e){}
+							data = window.currentProfileData;
+						}
 
 						// If we have data, populate fields
-						if (!data) return;
+						if (!data) {
+							try { console.warn('[user_profile:flag] no profile data available after fallbacks', { id }); } catch(e){}
+							return;
+						}
 
 						const setText = (sel, value) => {
-							if (value === undefined || value === null) return;
+							if (value === undefined || value === null) {
+								try { console.info('[user_profile:flag] setText skipped (no value)', { sel, value }); } catch(e){}
+								return;
+							}
 							const el = mount.querySelector(sel) || document.querySelector(sel);
-							if (!el) return;
-							if ('value' in el) el.value = value;
-							else el.textContent = value;
+							if (!el) { try { console.info('[user_profile:flag] setText element not found', { sel, value }); } catch(e){}; return; }
+							try {
+								if ('value' in el) el.value = value;
+								else el.textContent = value;
+								try { console.info('[user_profile:flag] setText applied', { sel, value }); } catch(e){}
+							} catch(e) { console.warn('[user_profile:flag] setText failed', { sel, value, err: e }); }
 						};
 
 						setText('#email-static', data.email || user?.email || '');
@@ -561,18 +660,7 @@
 		const node = document.getElementById('user-profile');
 		if (node) node.remove();
 
-		// Restore the previously detached `#home-container` back into its original
-		// parent/position without touching inline styles.
-		if (homeBackup && homeBackup.node && homeBackup.parent){
-			try{
-				if (homeBackup.nextSibling && homeBackup.nextSibling.parentNode === homeBackup.parent){
-					homeBackup.parent.insertBefore(homeBackup.node, homeBackup.nextSibling);
-				} else {
-					homeBackup.parent.appendChild(homeBackup.node);
-				}
-			} catch(e){ console.warn('Failed to restore home container', e); }
-			homeBackup = null;
-		}
+		// No restoration of `#home-container` is necessary as it is not detached.
 	}
 
 	// Expose minimal API expected by the app
