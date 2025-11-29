@@ -1,0 +1,14 @@
+<div id="orgchart-container" class="orgchart-container hidden">
+  <header class="orgchart-header">
+    <h1 data-i18n="toolbar.orgchart">OrgChart</h1>
+    <button id="orgchart-close" class="btn btn-secondary" data-i18n="orgchart.close">Close</button>
+  </header>
+  <div class="orgchart-controls">
+    <input id="orgchart-search" placeholder="" data-i18n-placeholder="orgchart.searchPlaceholder" />
+    <label>Depth: <select id="orgchart-depth"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option></select></label>
+  </div>
+  <div class="orgchart-canvas-wrap">
+    <canvas id="orgchart-canvas" width="1200" height="800"></canvas>
+    <div id="orgchart-loading" class="orgchart-loading hidden">Loading...</div>
+  </div>
+</div>

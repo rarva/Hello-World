@@ -662,4 +662,19 @@
     "fr": "Bio",
     "it": "Bio"
   }
+  ,
+  "toolbar.orgchart": {
+    "en": "OrgChart",
+    "pt": "OrgChart",
+    "de": "Organigramm",
+    "fr": "Organigramme",
+    "it": "Organigramma"
+  },
+  "orgchart.close": {
+    "en": "Close",
+    "pt": "Fechar",
+    "de": "Schließen",
+    "fr": "Fermer",
+    "it": "Chiudi"
+  }
 }

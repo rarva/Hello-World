@@ -1,0 +1,105 @@
+OrgChart Plan — Hello-World (Detailed)
+
+Overview
+--------
+This document captures a detailed plan for the OrgChart Canvas + Web Worker MVP in the Hello-World app. It is intentionally self-contained so it can be consulted later without having to scan code.
+
+Goals (MVP)
+- Display top-level roots (profiles with no manager) and shallow descendants (default depth=2).
+- Canvas-based rendering with Web Worker layout for responsiveness up to 2,000 nodes.
+- Lazy loading of deeper subtrees on expand; avatars via `AvatarStore.getImage(node.id)`.
+- Zoom & Level-of-Detail thresholds controlled by CSS variables for quick tuning.
+- All logged-in users can view the chart.
+
+High-level Flow
+---------------
+1. User clicks the first toolbar button.
+2. The toolbar button listener calls `orgchart_init.open()`.
+3. `orgchart_init.open()` mounts `containers/orgchart/orgchart.html` into `#main-container` and displays the canvas container.
+4. `orgchart_init` requests `/api/orgchart/subtree?max_depth=2` (no root_id) to retrieve top-level roots and children (server enforces `max_nodes=2000`).
+5. On response, `orgchart_init` spawns a Web Worker (`worker-layout.js`) and posts a `layout:init` message containing nodes, edges, and layout options.
+6. Worker computes a deterministic tree layout (BFS level assignment, simple subtree width for X spacing) and posts `layout:result` with coordinates and bounding boxes per node.
+7. Main thread receives layout result and forwards it to `orgchart_renderer`, which draws the graph into a single `<canvas>` using a transform matrix for pan/zoom.
+8. Renderer applies LOD rules (based on zoom) to draw dots, initials, avatars+names, or avatars+details.
+9. User interactions: pan/zoom, node click (center + open `user_profile`), expand node (calls API for that node, merges new nodes, sends incremental layout request to worker), close (unmount + terminate worker).
+
+Data Contracts
+--------------
+API response (JSON):
+{
+  nodes: [
+    { id, first_name, last_name, avatar_url, email, title, reports_to_id }
+  ],
+  edges: [ { from_id, to_id } ]
+}
+
+Worker message protocol (main → worker)
+- { type: "layout:init", nodes, edges, options }
+- { type: "layout:computeSubtree", rootId, maxDepth }
+- { type: "layout:cancel" }
+
+Worker message protocol (worker → main)
+- { type: "layout:result", nodes: [ { id, x, y, width, height } ], edges, meta }
+- { type: "layout:error", message }
+
+LOD thresholds & CSS variables
+- CSS variables (exposed to tune behavior):
+  --orgchart-zoom-default: 1.1;
+  --orgchart-lod-dot: 0.5;
+  --orgchart-lod-initials: 0.5;
+  --orgchart-lod-avatar32: 1.0;
+  --orgchart-lod-avatar64: 1.5;
+  --orgchart-avatar-size-small: 32px;
+  --orgchart-avatar-size-large: 64px;
+  --orgchart-vertical-spacing: 120px;
+  --orgchart-horizontal-spacing: 30px;
+
+LOD rendering policy (MVP):
+- zoom < 0.5: draw only color dots.
+- 0.5 ≤ zoom < 1.0: draw initials in color circles.
+- 1.0 ≤ zoom < 1.5: draw 32px avatar + full name.
+- zoom ≥ 1.5: draw 64px avatar + full name + additional details.
+
+Server-side constraints
+----------------------
+- Enforce `max_nodes=2000` per request and `max_depth` default 2 to keep payloads reasonable.
+- Use `WITH RECURSIVE` on `relationships` to fetch subtree with cycle-protection (visited tracking) and depth-limit.
+- Add indexes on `relationships.from_id` and `relationships.to_id`.
+- Endpoint requires an authenticated session (all logged-in users allowed).
+
+Implementation Steps (detailed)
+-------------------------------
+1. Add files:
+   - `containers/orgchart/orgchart.html`
+   - `containers/orgchart/orgchart_styles.css`
+   - `containers/orgchart/orgchart_init.js`
+   - `containers/orgchart/orgchart_renderer.js`
+   - `containers/orgchart/worker-layout.js`
+   - `api/orgchart/subtree.js`
+2. Wire `index.html` to load `orgchart_init.js` script (so module can register itself early and attach toolbar binding).
+3. Implement `orgchart_init.open()` / `close()` and expose window-level API used by toolbar binding.
+4. Implement worker layout: BFS, level assignment, compute subtree widths, place siblings next to each other, return bounding boxes.
+5. Implement renderer: canvas `requestAnimationFrame` loop, transform, LOD checks, avatar cache (LRU), hit-testing by bounding boxes, expand API.
+6. Implement API endpoint with Supabase service-role client if `SUPABASE_SERVICE_KEY` is available; otherwise return an error or a safe fixture.
+7. Add i18n keys and use `getString()` for toolbar and close button.
+8. Test with fixture dataset (small), then test with larger synthetic dataset up to 2,000 nodes for rendering time profiling.
+9. Iterate on spacing & LOD thresholds by changing CSS variables.
+
+Testing Guidance
+----------------
+- Unit-test worker algorithm with small graphs: balanced tree, chain, cycle detection.
+- Smoke test: start local static server, login, click toolbar button, verify OrgChart opens and displays fixture nodes.
+- Performance test: generate 2000 synthetic nodes and measure (a) layout time in worker, (b) initial draw time on canvas, (c) memory usage.
+
+Future Enhancements
+-------------------
+- Server-side precomputed coordinates for very large orgs (precompute job + `orgchart_snapshots` table).
+- Search & focus by name/email.
+- Export/print capabilities.
+- Better ordering heuristics: order by subtree size or team/function for visually sensible grouping.
+
+Contact
+-------
+If anything in this plan changes, update `docs/ORGCHART_PLAN.txt` and the todo list in the repo. For iterative changes, prefer small PRs that modify one area at a time.
+
+--- End of Plan

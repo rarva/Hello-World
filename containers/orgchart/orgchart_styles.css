@@ -1,0 +1,20 @@
+/* OrgChart styles and LOD variables (local scaffolding) */
+:root {
+  --orgchart-zoom-default: 1.1;
+  --orgchart-lod-dot: 0.5;
+  --orgchart-lod-initials: 0.5;
+  --orgchart-lod-avatar32: 1.0;
+  --orgchart-lod-avatar64: 1.5;
+  --orgchart-avatar-size-small: 32px;
+  --orgchart-avatar-size-large: 64px;
+  --orgchart-vertical-spacing: 120px;
+  --orgchart-horizontal-spacing: 30px;
+}
+
+.orgchart-container{background:var(--color-bg, #fff);border-radius:var(--radius,8px);padding:12px;box-shadow:0 6px 20px rgba(0,0,0,0.08);margin:12px}
+.hidden{display:none}
+.orgchart-header{display:flex;align-items:center;justify-content:space-between}
+.orgchart-canvas-wrap{position:relative;overflow:hidden;border:1px solid rgba(0,0,0,0.06);border-radius:6px;margin-top:8px}
+#orgchart-canvas{display:block;width:100%;height:600px;background:var(--color-surface, #f8f9fb)}
+.orgchart-loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;background:rgba(255,255,255,0.9);padding:8px 12px;border-radius:6px}
+.orgchart-controls{display:flex;gap:12px;align-items:center;margin-bottom:8px}

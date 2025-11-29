@@ -1,0 +1,1 @@
+{"nodes":[{"id":"1","first_name":"Alice","last_name":"Anderson","title":"CEO"},{"id":"2","first_name":"Bob","last_name":"Brown","title":"CTO","reports_to_id":"1"},{"id":"3","first_name":"Carol","last_name":"Clark","title":"CFO","reports_to_id":"1"}],"edges":[{"from_id":"1","to_id":"2"},{"from_id":"1","to_id":"3"}] }
