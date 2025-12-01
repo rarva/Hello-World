@@ -66,16 +66,34 @@ Server-side constraints
 - Use `WITH RECURSIVE` on `relationships` to fetch subtree with cycle-protection (visited tracking) and depth-limit.
 - Add indexes on `relationships.from_id` and `relationships.to_id`.
 - Endpoint requires an authenticated session (all logged-in users allowed).
+- SUPABASE_SERVICE_KEY is available.
 
 Implementation Steps (detailed)
 -------------------------------
-1. Add files:
+
+1. Add files, or update existing ones (read the repo in order to check what already exists):
    - `containers/orgchart/orgchart.html`
    - `containers/orgchart/orgchart_styles.css`
    - `containers/orgchart/orgchart_init.js`
    - `containers/orgchart/orgchart_renderer.js`
    - `containers/orgchart/worker-layout.js`
    - `api/orgchart/subtree.js`
+Existing (found in repo):
+orgchart.html
+orgchart_styles.css
+orgchart_init.js
+orgchart_renderer.js
+worker-layout.js
+subtree.js
+subtree.json (fixture)
+Migrations already present:
+001_create_profiles.sql
+002_extend_profiles.sql
+003_add_role_column.sql
+004_create_manager_requests.sql
+005_add_fk_manager_requests_profiles.sql
+006_add_title_column.sql
+
 2. Wire `index.html` to load `orgchart_init.js` script (so module can register itself early and attach toolbar binding).
 3. Implement `orgchart_init.open()` / `close()` and expose window-level API used by toolbar binding.
 4. Implement worker layout: BFS, level assignment, compute subtree widths, place siblings next to each other, return bounding boxes.
@@ -85,21 +103,94 @@ Implementation Steps (detailed)
 8. Test with fixture dataset (small), then test with larger synthetic dataset up to 2,000 nodes for rendering time profiling.
 9. Iterate on spacing & LOD thresholds by changing CSS variables.
 
-Testing Guidance
-----------------
-- Unit-test worker algorithm with small graphs: balanced tree, chain, cycle detection.
-- Smoke test: start local static server, login, click toolbar button, verify OrgChart opens and displays fixture nodes.
-- Performance test: generate 2000 synthetic nodes and measure (a) layout time in worker, (b) initial draw time on canvas, (c) memory usage.
+How edges are represented, drawn, styled, and interacted with in the OrgChart UI.
+---------------------------------------------------------------------------------
 
-Future Enhancements
--------------------
-- Server-side precomputed coordinates for very large orgs (precompute job + `orgchart_snapshots` table).
-- Search & focus by name/email.
-- Export/print capabilities.
-- Better ordering heuristics: order by subtree size or team/function for visually sensible grouping.
+1.Data / Payload
+-One-per-employee: API returns at most one edge per from_id (latest manager_requests row).
+-Node coords: worker returns node bounding boxes/anchor points; renderer uses those anchors to build edge paths.
 
-Contact
--------
-If anything in this plan changes, update `docs/ORGCHART_PLAN.txt` and the todo list in the repo. For iterative changes, prefer small PRs that modify one area at a time.
+2.Visual Style Mapping
+-Status → style: accepted → solid black stroke; pending → dashed red stroke; declined → solid red stroke.
+-Stroke & weight: base stroke ~1.5px (scale with DPR).
+-no Badges
+-Color tokens: use CSS variables (--orgchart-edge-accepted, --orgchart-edge-pending, --orgchart-edge-declined) so themes can change easily.
 
---- End of Plan
+3.Path / Layout Algorithm
+dominant diagram flow top→down.
+Two vertex (orthogonal) connectors: prefer vertical-then-horizontal-then-vertical polylines for clarity in trees: start at manager bottom-center → vertical to mid-y → horizontal to child x → vertical to child top-center.
+Routing hints: worker supplies sibling ordering and subtree widths so renderer can compute elbow X offsets deterministically.
+Use garbage\edge.html for reference.
+
+4.Rendering & Performance
+Separate layers: draw edges on a background canvas layer, nodes on top; this lets you re-render edges independently from nodes.
+Batching: group same-style edges into single path draws to reduce canvas state changes.
+On overlaping segments, draw black segment.
+Offscreen / worker-friendly: heavy path math in worker if needed; actual canvas drawing on main thread. Use OffscreenCanvas when supported.
+Pixel scaling: multiply canvas size by devicePixelRatio; scale stroke widths accordingly.
+Culling: skip drawing edges completely outside the current viewport; use node bounding boxes for quick visibility tests.
+Interaction & State Changes.
+Have the worker compute routing hints.
+
+5.Hover/Focus: No hover highlights
+Click: No clicking
+Animated updates: on subtree expand/merge, animate edge morphs (short fade+translate) to visually connect new nodes without heavy layout churn.
+Accessibility & UX
+
+
+Database Schema & Migrations
+----------------------------
+
+TL;DR: For the MVP add a nullable `reports_to_id` FK column to `profiles`, index it, backfill from the latest accepted
+`manager_requests` rows in an idempotent, audited way, update `api/orgchart/subtree.js` to derive `edges`
+from that column (manager → report), and include a reversible migration, tests, and a safe rollout/rollback
+procedure.
+
+- Migration file: create `migrations/007_add_reports_to_column.sql` with an `UP` that:
+  - adds `reports_to_id INTEGER` (nullable) to `profiles`,
+  - adds `REFERENCES profiles(id) ON DELETE SET NULL`, and
+  - creates an index on `profiles.reports_to_id`.
+  - The `DOWN` must drop the index then drop the column (exact reverse) so rollback is clean.
+
+- Backfill policy (manual / idempotent):
+  - Authoritative source: the latest `manager_requests` row per employee regardless of the status.
+  - Backfill updates only when necessary (e.g., `profiles.reports_to_id IS NULL` or per an explicit
+    overwrite policy). Run updates in small transactional batches, guarded by an advisory lock.
+  - Record changed rows in an audit table such as `orgchart_backfill_log` or create a one-time
+    `orgchart_profiles_backup` snapshot for the affected rows to enable easy rollback.
+  - Detect anomalies (self-reference, conflicts, cycles) and surface them for manual review rather
+    than blindly overwriting.
+
+- API update (`api/orgchart/subtree.js`):
+  - Derive `edges` as `{ from_id: profiles.reports_to_id, to_id: profiles.id }` when
+    `reports_to_id IS NOT NULL`.
+  - Implement subtree fetch with `WITH RECURSIVE` that tracks a `visited` set to prevent cycles,
+    enforces `max_depth` and `max_nodes` at the API layer, and returns `nodes` (including
+    `reports_to_id`) and `edges` in the existing response shape.
+
+- Indexes & query plan verification:
+  - Ensure index on `profiles.reports_to_id` exists. After backfill run `ANALYZE` and `EXPLAIN`
+    the recursive subtree query with representative parameters to confirm index usage and
+    acceptable planning cost.
+
+- Data safety & constraints:
+  - Optionally add a lightweight CHECK or trigger to prevent `reports_to_id = id` (low risk).
+  - Prefer detection + manual remediation for complex cycles.
+
+- Testing & rollout checklist:
+  - Preflight on staging (snapshot), run migration + backfill, verify `api/orgchart/subtree` outputs
+    expected roots and edges.
+  - Production rollout: take DB backup/snapshot, run migration + backfill during a low-traffic window,
+    run smoke tests, and monitor. Rollback via migration `DOWN` or restore changed rows from the
+    backup/audit table as needed.
+
+- Migration → Option B path:
+  - Keep this migration minimal so a future migration that normalizes `reports_to_id` into a
+    `relationships` table is straightforward (preserve `reports_to_id` as the authoritative view
+    until the controlled migration copies it into `relationships`).
+
+This section implements the TL;DR and steps discussed for Option A (MVP). If you want, I can now
+generate the exact reversible SQL for `migrations/007_add_reports_to_column.sql` and the idempotent,
+bedded backfill SQL (batched + advisory-lock guarded), plus PowerShell-friendly `psql` commands
+to run the backfill interactively.
+
