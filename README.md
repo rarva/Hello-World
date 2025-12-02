@@ -1,6 +1,6 @@
 # Hello-World — Rhomberg OrgChart Admin
 
-Stable snapshot: `v1.0.8-stable-2025-11-29`
+Stable snapshot: `v1.0.9-stable-2025-12-02`
 
 A small single-page demo admin app with multi-language authentication, onboarding, avatar management, and manager/requests workflows backed by Supabase (PostgreSQL + Auth + Storage). This repository contains the browser UI, serverless/email handlers, DB migrations, and development tooling used to build and maintain the project.
 
@@ -162,7 +162,7 @@ If you'd like, I can also:
 
 **Maintainer:** `rarva` — feel free to open issues or ask for follow-ups (DB migration application, release PR, or deploy verification).
 
-**Last updated:** 2025-11-29
+**Last updated:** 2025-12-02
 ````markdown
 # Hello-World
 Rhomberg OrgChart Admin — multi-language authentication + onboarding demo (Supabase backend)
