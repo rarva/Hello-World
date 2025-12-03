@@ -29,7 +29,8 @@
   <!-- Global functions and utilities -->
   <script src="global/global_functions.js"></script>
   <!-- Supabase configuration (load first) -->
-  <script src="config.js"></script>
+  <!-- Load runtime config from serverless endpoint that reads Vercel env vars -->
+  <script src="/api/config.js"></script>
   <!-- Database client initialization -->
   <script src="database_init.js"></script>
   <script src="global/elements_styles.js"></script>
